@@ -67,51 +67,61 @@ class LSP_Cert_Integration {
     }
 
     /**
-     * Get persyaratan dasar list
+     * Pecah teks persyaratan menjadi daftar baris.
+     *
+     * @param string $text
+     * @return string[]
      */
-    public static function get_persyaratan_dasar( $skema_id ) {
-        $text = get_post_meta( $skema_id, 'persyaratan_skema', true );
+    public static function parse_persyaratan_lines( $text ) {
         $list = array();
-        if ( ! empty( $text ) ) {
-            $lines = explode( "\n", str_replace( "\r", "", $text ) );
-            foreach ( $lines as $line ) {
-                $line = trim( $line );
-                if ( ! empty( $line ) ) {
-                    $list[] = $line;
-                }
+
+        if ( empty( $text ) || ! is_string( $text ) ) {
+            return $list;
+        }
+
+        foreach ( explode( "\n", str_replace( "\r", "", $text ) ) as $line ) {
+            $line = trim( $line );
+            if ( '' !== $line ) {
+                $list[] = $line;
             }
         }
-        if ( empty( $list ) ) {
-            $list = array(
-                'Fotokopi Ijazah Pendidikan Terakhir',
-                'Surat Keterangan Pengalaman Kerja / Magang',
-                'Portofolio / Bukti Pekerjaan yang Relevan',
-            );
-        }
+
         return $list;
     }
 
     /**
-     * Get persyaratan administrasi list
+     * Get persyaratan dasar list.
+     *
+     * Persyaratan dasar bersifat per skema (ijazah, pengalaman, sertifikat pelatihan).
+     * Tidak ada daftar bawaan: bila Master Skema belum mengisi, hasilnya kosong.
+     *
+     * @param int $skema_id
+     * @return string[]
+     */
+    public static function get_persyaratan_dasar( $skema_id ) {
+        return self::parse_persyaratan_lines( get_post_meta( $skema_id, 'persyaratan_skema', true ) );
+    }
+
+    /**
+     * Get persyaratan administrasi list.
+     *
+     * Urutan sumber: meta skema → pengaturan global Core (berlaku untuk semua skema).
+     * Tidak ada daftar bawaan di plugin ini.
+     *
+     * @param int $skema_id
+     * @return string[]
      */
     public static function get_persyaratan_admin( $skema_id ) {
-        $text = get_post_meta( $skema_id, 'persyaratan_admin', true );
-        $list = array();
-        if ( ! empty( $text ) ) {
-            $lines = explode( "\n", str_replace( "\r", "", $text ) );
-            foreach ( $lines as $line ) {
-                $line = trim( $line );
-                if ( ! empty( $line ) ) {
-                    $list[] = $line;
-                }
+        $list = self::parse_persyaratan_lines( get_post_meta( $skema_id, 'persyaratan_admin', true ) );
+
+        if ( empty( $list ) ) {
+            if ( class_exists( 'LSP_Core_Management' ) && method_exists( 'LSP_Core_Management', 'get_persyaratan_admin_global' ) ) {
+                $list = self::parse_persyaratan_lines( LSP_Core_Management::get_persyaratan_admin_global() );
+            } else {
+                $list = self::parse_persyaratan_lines( get_option( 'lsp_core_persyaratan_admin', '' ) );
             }
         }
-        if ( empty( $list ) ) {
-            $list = array(
-                'Fotokopi KTP / Kartu Identitas',
-                'Pas Foto Formal 3x4 (Background Merah/Biru)',
-            );
-        }
+
         return $list;
     }
 

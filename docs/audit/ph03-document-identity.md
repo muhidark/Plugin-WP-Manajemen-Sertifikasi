@@ -91,17 +91,47 @@ verifikasi pemulihan data.
 
 ---
 
-## 6. Temuan di luar scope (untuk fase berikutnya)
+## 6. Tambahan PH-03b — Persyaratan Dasar & Administratif
 
-| # | Temuan | Fase |
-|---|---|---|
-| 1 | `get_persyaratan_dasar()` / `get_persyaratan_admin()` masih mengembalikan daftar persyaratan generik ("Fotokopi Ijazah…", "Fotokopi KTP…") bila meta skema kosong — konten buatan pada FR.APL.01 | perlu keputusan |
-| 2 | `render_kegiatan_print_page()` memakai `$pendaftaran->paket_muk_id` sebelum `$pendaftaran` diisi (`null`) | PH-09 |
-| 3 | `page_dashboard()` tidak terdaftar di menu (PH01-05) | UI/PH-10 |
+**Konteks:** persyaratan administratif memang sama untuk semua skema, sehingga daftar generik di kode
+bukan sekadar "data karangan" — tetapi tempatnya salah (hardcoded, tidak bisa diubah admin). Persyaratan
+dasar sebaliknya bersifat per skema (ijazah, pengalaman, sertifikat pelatihan) dan tidak boleh disamakan.
+
+### Perubahan
+
+| Berkas | Isi |
+|---|---|
+| Core `lsp-core-management.php` | Pengaturan baru **Persyaratan Administratif (sama untuk semua skema)** di LSP Core → Pengaturan LSP, satu baris per persyaratan; helper `get_persyaratan_admin_global()` jadi satu-satunya penentu nilai bawaan |
+| Cert `class-integration.php` | `get_persyaratan_admin()`: meta skema → pengaturan global Core → kosong. `get_persyaratan_dasar()`: meta skema saja. Daftar bawaan dihapus dari plugin |
+| `tests/ph03b-persyaratan.php` | 12 assertion |
+
+### Hasil uji
+
+| Uji | Hasil |
+|---|---|
+| Skema dengan meta sendiri | **PASS** — dasar & administratif dari meta, teks generik 0 |
+| Skema tanpa meta | **PASS** — dasar kosong (tidak dikarang), administratif 2 baris dari pengaturan global |
+| Pengaturan global diubah | **PASS** — 3 baris baru langsung dipakai skema tanpa meta |
+| Meta skema menang atas global | **PASS** |
+| Pengaturan global dipulihkan | **PASS** |
+| Halaman Pengaturan LSP (HTTP) | **PASS** — HTTP 200, field baru tampil dengan nilai bawaan KTP + pas foto |
+| FR.APL.01 (HTTP) | **PASS** — 31.983 byte, memakai persyaratan skema; 0 teks generik lama |
+
+**Catatan perilaku:** skema yang belum mengisi `persyaratan_skema` sekarang mencetak bagian
+"Persyaratan Dasar" **kosong** — bukan daftar karangan. Isi lewat Master Skema agar FR.APL.01 lengkap.
 
 ---
 
-## 7. Langkah berikutnya
+## 7. Temuan di luar scope (untuk fase berikutnya)
+
+| # | Temuan | Fase |
+|---|---|---|
+| 1 | `render_kegiatan_print_page()` memakai `$pendaftaran->paket_muk_id` sebelum `$pendaftaran` diisi (`null`) | PH-09 |
+| 2 | `page_dashboard()` tidak terdaftar di menu (PH01-05) | UI/PH-10 |
+
+---
+
+## 8. Langkah berikutnya
 
 **PH-04 — Role & Capability Hardening.** Menyatukan model hak akses: `current_user_can('asesor')`
 dipakai sebagai capability padahal `asesor` adalah role di Core. Gate: admin penuh, asesor sah bisa
