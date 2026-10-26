@@ -175,7 +175,7 @@ class LSP_Cert_IA03 {
             return;
         }
 
-        if ( ! current_user_can( 'manage_options' ) ) {
+        if ( ! current_user_can( 'lsp_cert_manage_instruments' ) ) {
             wp_die( 'Akses tidak diizinkan.', 403 );
         }
 
@@ -206,7 +206,7 @@ class LSP_Cert_IA03 {
      * Render Halaman Pengaturan Instrumen FR.IA.03
      */
     public static function admin_page() {
-        if ( ! current_user_can( 'manage_options' ) ) {
+        if ( ! current_user_can( 'lsp_cert_manage_instruments' ) ) {
             wp_die( 'Akses ditolak.' );
         }
 

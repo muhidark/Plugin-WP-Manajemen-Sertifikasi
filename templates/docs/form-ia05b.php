@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // KEAMANAN KETAT: Dokumen terbatas, hanya dapat diakses oleh Admin atau Asesor resmi
-if ( ! current_user_can( 'manage_options' ) && ! current_user_can( 'asesor' ) && ! LSP_Cert_Integration::is_asesor( get_current_user_id() ) && ! defined( 'LSP_CERT_TESTING' ) ) {
+if ( ! current_user_can( 'lsp_cert_print_docs' ) && ! defined( 'LSP_CERT_TESTING' ) ) {
     wp_die( 'Akses ditolak: FR.IA.05B (Lembar Kunci Jawaban) merupakan dokumen rahasia dan hanya dapat diakses oleh Admin atau Asesor.', 'Akses Ditolak', array( 'response' => 403 ) );
 }
 

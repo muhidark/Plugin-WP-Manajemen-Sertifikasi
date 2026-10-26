@@ -89,7 +89,7 @@
                                     <div style="border-top: 1px solid #e2e8f0; margin: 4px 0;"></div>
                                     <div style="padding: 4px 12px; font-size: 10.5px; font-weight: bold; color: #64748b; text-transform: uppercase;">FR.IA.05</div>
                                     <a href="<?php echo esc_url( admin_url( 'admin.php?page=lsp-sertifikasi&action=print&id=' . $kegiatan->id . '&doc=ia05a' ) ); ?>" target="_blank" style="display: block; padding: 5px 12px; color: #0284c7; text-decoration: none; font-size: 12px; font-weight: 600;">📝 FR.IA.05A — Soal PG</a>
-                                    <?php if ( current_user_can( 'manage_options' ) || current_user_can( 'asesor' ) || LSP_Cert_Integration::is_asesor( get_current_user_id() ) ) : ?>
+                                    <?php if ( current_user_can( 'lsp_cert_print_docs' ) || LSP_Cert_Integration::is_asesor( get_current_user_id() ) ) : ?>
                                     <a href="<?php echo esc_url( admin_url( 'admin.php?page=lsp-sertifikasi&action=print&id=' . $kegiatan->id . '&doc=ia05b' ) ); ?>" target="_blank" style="display: block; padding: 5px 12px; color: #dc2626; text-decoration: none; font-size: 12px; font-weight: 600;">🔒 FR.IA.05B — Kunci PG (Khusus)</a>
                                     <?php endif; ?>
                                     <a href="<?php echo esc_url( admin_url( 'admin.php?page=lsp-sertifikasi&action=print&id=' . $kegiatan->id . '&doc=ia05c' ) ); ?>" target="_blank" style="display: block; padding: 5px 12px; color: #16a34a; text-decoration: none; font-size: 12px; font-weight: 600;">✍️ FR.IA.05C — Lembar Jawaban</a>

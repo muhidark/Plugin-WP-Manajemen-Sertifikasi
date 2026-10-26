@@ -18,23 +18,42 @@ class LSP_Cert_Admin {
     }
 
     public static function register_menus() {
+        // Pengguna yang hanya berhak mencetak dokumen (mis. asesor) mendapat menu
+        // sendiri, sehingga tidak pernah melihat halaman pengelolaan kegiatan.
+        if ( ! current_user_can( 'lsp_cert_manage_activities' ) ) {
+            if ( current_user_can( 'lsp_cert_print_docs' ) ) {
+                add_menu_page(
+                    'Cetak Dokumen Sertifikasi',
+                    'Cetak Dokumen',
+                    'lsp_cert_print_docs',
+                    'lsp-cetak-dokumen',
+                    array( 'LSP_Cert_Cetak_Dokumen', 'admin_page' ),
+                    'dashicons-printer',
+                    30
+                );
+            }
+            return;
+        }
+
         // Main menu
         add_menu_page(
             'Manajemen Dokumen Sertifikasi',
             'Manajemen Dokumen Sertifikasi',
-            'manage_options',
+            'lsp_cert_view_docs',
             'lsp-sertifikasi',
-            array( 'LSP_Cert_Kegiatan', 'admin_page' ),
+            array( __CLASS__, 'route_default_page' ),
             'dashicons-clipboard',
             30
         );
 
         // Submenu 1: Jadwal (kegiatan)
+        // Capability disamakan dengan menu induk karena slug-nya sama ('lsp-sertifikasi');
+        // pembatasan pengelolaan kegiatan ditegakkan di LSP_Cert_Kegiatan::admin_page().
         add_submenu_page(
             'lsp-sertifikasi',
             'Jadwal Sertifikasi',
             'Jadwal',
-            'manage_options',
+            'lsp_cert_view_docs',
             'lsp-sertifikasi',
             array( 'LSP_Cert_Kegiatan', 'admin_page' )
         );
@@ -44,7 +63,7 @@ class LSP_Cert_Admin {
             'lsp-sertifikasi',
             'Pendaftaran',
             'Pendaftaran',
-            'manage_options',
+            'lsp_cert_manage_activities',
             'lsp-pendaftaran',
             array( 'LSP_Cert_Pendaftaran', 'admin_page' )
         );
@@ -54,7 +73,7 @@ class LSP_Cert_Admin {
             'lsp-sertifikasi',
             'Cetak Dokumen Asesmen',
             'Cetak Dokumen',
-            'manage_options',
+            'lsp_cert_print_docs',
             'lsp-cetak-dokumen',
             array( 'LSP_Cert_Cetak_Dokumen', 'admin_page' )
         );
@@ -65,7 +84,7 @@ class LSP_Cert_Admin {
             null,
             'Jadwal Sertifikasi',
             'Jadwal Sertifikasi',
-            'manage_options',
+            'lsp_cert_manage_activities',
             'lsp-kegiatan',
             array( 'LSP_Cert_Kegiatan', 'admin_page' )
         );
@@ -75,7 +94,7 @@ class LSP_Cert_Admin {
             'lsp-sertifikasi',
             'Instrumen FR.IA.02',
             'Tugas Praktik FR.IA.02',
-            'manage_options',
+            'lsp_cert_manage_instruments',
             'lsp-ia02',
             array( 'LSP_Cert_IA02', 'admin_page' )
         );
@@ -85,7 +104,7 @@ class LSP_Cert_Admin {
             'lsp-sertifikasi',
             'Instrumen FR.IA.03',
             'Pertanyaan FR.IA.03',
-            'manage_options',
+            'lsp_cert_manage_instruments',
             'lsp-ia03',
             array( 'LSP_Cert_IA03', 'admin_page' )
         );
@@ -95,7 +114,7 @@ class LSP_Cert_Admin {
             'lsp-sertifikasi',
             'Instrumen FR.IA.04',
             'Materi FR.IA.04 (DIT)',
-            'manage_options',
+            'lsp_cert_manage_instruments',
             'lsp-ia04',
             array( 'LSP_Cert_IA04', 'admin_page' )
         );
@@ -105,7 +124,7 @@ class LSP_Cert_Admin {
             'lsp-sertifikasi',
             'Instrumen FR.IA.05',
             'Soal FR.IA.05 (PG)',
-            'manage_options',
+            'lsp_cert_manage_instruments',
             'lsp-ia05',
             array( 'LSP_Cert_IA05', 'admin_page' )
         );
@@ -115,7 +134,7 @@ class LSP_Cert_Admin {
             'lsp-sertifikasi',
             'Kelompok Pekerjaan',
             'Kelompok Pekerjaan',
-            'manage_options',
+            'lsp_cert_manage_instruments',
             'lsp-kelompok-pekerjaan',
             array( 'LSP_Cert_Kelompok_Pekerjaan', 'admin_page' )
         );
@@ -161,6 +180,27 @@ class LSP_Cert_Admin {
             return 'lsp-cetak-dokumen';
         }
         return $submenu_file;
+    }
+
+    /**
+     * Halaman pendarat menu utama "Manajemen Dokumen Sertifikasi".
+     *
+     * Administrator (punya lsp_cert_manage_activities) langsung masuk ke Jadwal.
+     * Pengguna yang hanya berhak mencetak dokumen (mis. asesor) diarahkan ke
+     * halaman Cetak Dokumen, sehingga submenu kegiatan tidak perlu dibuka.
+     */
+    public static function route_default_page() {
+        if ( current_user_can( 'lsp_cert_manage_activities' ) ) {
+            LSP_Cert_Kegiatan::admin_page();
+            return;
+        }
+
+        if ( current_user_can( 'lsp_cert_print_docs' ) ) {
+            wp_safe_redirect( admin_url( 'admin.php?page=lsp-cetak-dokumen' ) );
+            exit;
+        }
+
+        wp_die( 'Anda tidak memiliki hak akses ke halaman ini.', 'Akses Ditolak', array( 'response' => 403 ) );
     }
 
     public static function page_dashboard() {

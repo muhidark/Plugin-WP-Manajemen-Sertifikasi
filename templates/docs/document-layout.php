@@ -363,7 +363,7 @@ $is_mapa = ( strpos( $doc_type, 'mapa' ) !== false );
                         <option value="ia05a" <?php selected( $doc_type, 'ia05a' ); ?>>
                             FR.IA.05A Soal Pilihan Ganda
                         </option>
-                        <?php if ( current_user_can( 'manage_options' ) || current_user_can( 'asesor' ) || LSP_Cert_Integration::is_asesor( get_current_user_id() ) ) : ?>
+                        <?php if ( current_user_can( 'lsp_cert_print_docs' ) ) : ?>
                         <option value="ia05b" <?php selected( $doc_type, 'ia05b' ); ?>>
                             FR.IA.05B Kunci Jawaban PG (Terbatas)
                         </option>

@@ -36,6 +36,16 @@ class LSP_Cert_Kegiatan {
     }
 
     public static function admin_page() {
+        if ( ! current_user_can( 'lsp_cert_manage_activities' ) ) {
+            // Pengguna yang hanya berhak mencetak dokumen diarahkan ke halaman cetak,
+            // bukan ditolak, karena menu induk memang terlihat untuk mereka.
+            if ( current_user_can( 'lsp_cert_print_docs' ) ) {
+                wp_safe_redirect( admin_url( 'admin.php?page=lsp-cetak-dokumen' ) );
+                exit;
+            }
+            wp_die( 'Anda tidak memiliki hak akses ke halaman ini.', 'Akses Ditolak', array( 'response' => 403 ) );
+        }
+
         $action = isset( $_GET['action'] ) ? $_GET['action'] : 'list';
         
         switch ( $action ) {
@@ -68,7 +78,7 @@ class LSP_Cert_Kegiatan {
     public static function ajax_save_kegiatan() {
         check_ajax_referer( 'lsp_cert_nonce', 'nonce' );
         
-        if ( ! current_user_can( 'manage_options' ) ) {
+        if ( ! current_user_can( 'lsp_cert_manage_activities' ) ) {
             wp_send_json_error( 'Unauthorized' );
         }
         
@@ -142,7 +152,7 @@ class LSP_Cert_Kegiatan {
     public static function ajax_delete_kegiatan() {
         check_ajax_referer( 'lsp_cert_nonce', 'nonce' );
         
-        if ( ! current_user_can( 'manage_options' ) ) {
+        if ( ! current_user_can( 'lsp_cert_manage_activities' ) ) {
             wp_send_json_error( 'Unauthorized' );
         }
         
@@ -161,7 +171,7 @@ class LSP_Cert_Kegiatan {
     public static function ajax_update_status() {
         check_ajax_referer( 'lsp_cert_nonce', 'nonce' );
         
-        if ( ! current_user_can( 'manage_options' ) ) {
+        if ( ! current_user_can( 'lsp_cert_manage_activities' ) ) {
             wp_send_json_error( 'Unauthorized' );
         }
         

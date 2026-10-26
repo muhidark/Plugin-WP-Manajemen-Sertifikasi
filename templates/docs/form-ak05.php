@@ -71,7 +71,7 @@ if ( isset( $_GET['asesor_id'] ) && intval( $_GET['asesor_id'] ) > 0 ) {
 } elseif ( count( $asesor_groups ) === 1 ) {
     $group_ids = array_keys( $asesor_groups );
     $active_asesor_id = $group_ids[0];
-} elseif ( current_user_can( 'asesor' ) && ! current_user_can( 'manage_options' ) ) {
+} elseif ( current_user_can( 'lsp_cert_print_docs' ) && ! current_user_can( 'manage_options' ) ) {
     $active_asesor_id = get_current_user_id();
 } elseif ( ! empty( $asesor['id'] ) ) {
     $active_asesor_id = (int) $asesor['id'];

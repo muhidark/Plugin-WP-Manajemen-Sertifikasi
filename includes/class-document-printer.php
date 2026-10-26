@@ -200,14 +200,14 @@ class LSP_Cert_Document_Printer {
      * @param string $doc_type
      */
     public static function render_print_page( $pendaftaran_id, $doc_type = 'all' ) {
-        // Cek otorisasi
-        if ( ! current_user_can( 'manage_options' ) && ! current_user_can( 'asesor' ) ) {
+        // Cek otorisasi: capability khusus cetak dokumen (admin & asesor resmi).
+        if ( ! current_user_can( 'lsp_cert_print_docs' ) ) {
             wp_die( 'Anda tidak memiliki hak akses untuk mencetak dokumen ini.', 'Akses Ditolak', array( 'response' => 403 ) );
         }
 
         // Keamanan Khusus FR.IA.05B: Lembar Kunci Jawaban terbatas hanya untuk Admin dan Asesor resmi
         if ( 'ia05b' === $doc_type ) {
-            if ( ! current_user_can( 'manage_options' ) && ! current_user_can( 'asesor' ) && ! LSP_Cert_Integration::is_asesor( get_current_user_id() ) ) {
+            if ( ! current_user_can( 'lsp_cert_print_docs' ) ) {
                 wp_die( 'Akses ditolak: FR.IA.05B (Lembar Kunci Jawaban) merupakan dokumen rahasia dan hanya dapat diakses oleh Admin atau Asesor.', 'Akses Ditolak', array( 'response' => 403 ) );
             }
         }
@@ -217,8 +217,8 @@ class LSP_Cert_Document_Printer {
             wp_die( 'Data pendaftaran tidak ditemukan.', 'Data Tidak Ditemukan', array( 'response' => 404 ) );
         }
 
-        // Isolasi data peserta: jika asesor non-admin mengakses, pastikan sesuai penugasan
-        if ( ! current_user_can( 'manage_options' ) && current_user_can( 'asesor' ) ) {
+        // Isolasi data peserta: asesor non-admin hanya boleh peserta yang ditugaskan kepadanya.
+        if ( ! current_user_can( 'manage_options' ) && LSP_Cert_Integration::is_asesor( get_current_user_id() ) ) {
             $current_user_id = get_current_user_id();
             if ( ! empty( $pendaftaran->asesor_id ) && (int) $pendaftaran->asesor_id !== $current_user_id ) {
                 wp_die( 'Anda tidak memiliki hak akses untuk mencetak dokumen peserta ini.', 'Akses Ditolak', array( 'response' => 403 ) );
@@ -323,14 +323,14 @@ class LSP_Cert_Document_Printer {
      * @param string $doc_type
      */
     public static function render_kegiatan_print_page( $kegiatan_id, $doc_type = 'mapa02' ) {
-        // Cek otorisasi
-        if ( ! current_user_can( 'manage_options' ) && ! current_user_can( 'asesor' ) ) {
+        // Cek otorisasi: capability khusus cetak dokumen (admin & asesor resmi).
+        if ( ! current_user_can( 'lsp_cert_print_docs' ) ) {
             wp_die( 'Anda tidak memiliki hak akses untuk mencetak dokumen ini.', 'Akses Ditolak', array( 'response' => 403 ) );
         }
 
         // Keamanan Khusus FR.IA.05B: Lembar Kunci Jawaban terbatas hanya untuk Admin dan Asesor resmi
         if ( 'ia05b' === $doc_type ) {
-            if ( ! current_user_can( 'manage_options' ) && ! current_user_can( 'asesor' ) && ! LSP_Cert_Integration::is_asesor( get_current_user_id() ) ) {
+            if ( ! current_user_can( 'lsp_cert_print_docs' ) ) {
                 wp_die( 'Akses ditolak: FR.IA.05B (Lembar Kunci Jawaban) merupakan dokumen rahasia dan hanya dapat diakses oleh Admin atau Asesor.', 'Akses Ditolak', array( 'response' => 403 ) );
             }
         }

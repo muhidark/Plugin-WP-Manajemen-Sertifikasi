@@ -183,7 +183,7 @@ class LSP_Cert_IA05 {
             return;
         }
 
-        if ( ! current_user_can( 'manage_options' ) ) {
+        if ( ! current_user_can( 'lsp_cert_manage_instruments' ) ) {
             wp_die( 'Akses ditolak: Anda tidak memiliki izin untuk menyimpan konfigurasi instrumen.', 'Akses Ditolak', array( 'response' => 403 ) );
         }
 
@@ -227,7 +227,7 @@ class LSP_Cert_IA05 {
      * Render halaman admin Instrumen FR.IA.05
      */
     public static function admin_page() {
-        if ( ! current_user_can( 'manage_options' ) ) {
+        if ( ! current_user_can( 'lsp_cert_manage_instruments' ) ) {
             wp_die( 'Anda tidak memiliki hak akses ke halaman ini.' );
         }
 

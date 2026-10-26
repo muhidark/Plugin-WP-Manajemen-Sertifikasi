@@ -355,7 +355,7 @@ class LSP_Cert_Paket_MUK {
 
     public static function ajax_save_paket() {
         check_ajax_referer( 'lsp_cert_nonce', 'nonce' );
-        if ( ! current_user_can( 'manage_options' ) ) {
+        if ( ! current_user_can( 'lsp_cert_manage_instruments' ) ) {
             wp_send_json_error( 'Unauthorized' );
         }
 
@@ -411,7 +411,7 @@ class LSP_Cert_Paket_MUK {
 
     public static function ajax_clone_paket() {
         check_ajax_referer( 'lsp_cert_nonce', 'nonce' );
-        if ( ! current_user_can( 'manage_options' ) ) {
+        if ( ! current_user_can( 'lsp_cert_manage_instruments' ) ) {
             wp_send_json_error( 'Unauthorized' );
         }
 
@@ -435,7 +435,7 @@ class LSP_Cert_Paket_MUK {
 
     public static function ajax_set_default_paket() {
         check_ajax_referer( 'lsp_cert_nonce', 'nonce' );
-        if ( ! current_user_can( 'manage_options' ) ) {
+        if ( ! current_user_can( 'lsp_cert_manage_instruments' ) ) {
             wp_send_json_error( 'Unauthorized' );
         }
 
@@ -455,7 +455,7 @@ class LSP_Cert_Paket_MUK {
 
     public static function ajax_delete_paket() {
         check_ajax_referer( 'lsp_cert_nonce', 'nonce' );
-        if ( ! current_user_can( 'manage_options' ) ) {
+        if ( ! current_user_can( 'lsp_cert_manage_instruments' ) ) {
             wp_send_json_error( 'Unauthorized' );
         }
 

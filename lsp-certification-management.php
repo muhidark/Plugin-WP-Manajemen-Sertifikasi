@@ -79,6 +79,7 @@ function lsp_cert_init() {
 
     // Load includes
     require_once LSP_CERT_PLUGIN_DIR . 'includes/class-activator.php';
+    require_once LSP_CERT_PLUGIN_DIR . 'includes/class-capabilities.php';
     require_once LSP_CERT_PLUGIN_DIR . 'includes/class-database.php';
     require_once LSP_CERT_PLUGIN_DIR . 'includes/class-integration.php';
     require_once LSP_CERT_PLUGIN_DIR . 'includes/class-ia02.php';
@@ -102,6 +103,7 @@ function lsp_cert_init() {
     require_once LSP_CERT_PLUGIN_DIR . 'public/class-form-handler.php';
     
     // Initialize classes
+    LSP_Cert_Capabilities::init();
     LSP_Cert_Activator::init();
     LSP_Cert_Database::init();
     LSP_Cert_Integration::init();
@@ -141,6 +143,8 @@ function lsp_cert_activate() {
     }
 
     require_once LSP_CERT_PLUGIN_DIR . 'includes/class-activator.php';
+    require_once LSP_CERT_PLUGIN_DIR . 'includes/class-capabilities.php';
+    LSP_Cert_Capabilities::grant();
     LSP_Cert_Activator::activate();
 }
 register_activation_hook( __FILE__, 'lsp_cert_activate' );

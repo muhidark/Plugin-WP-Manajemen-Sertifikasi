@@ -20,7 +20,7 @@ class LSP_Cert_Cetak_Dokumen {
      * Render Halaman Admin Cetak Dokumen
      */
     public static function admin_page() {
-        if ( ! current_user_can( 'manage_options' ) && ! current_user_can( 'asesor' ) ) {
+        if ( ! current_user_can( 'lsp_cert_print_docs' ) ) {
             wp_die( 'Anda tidak memiliki hak akses ke halaman ini.' );
         }
 
