@@ -36,6 +36,135 @@ class LSP_Cert_Database {
         if ( empty( $col_alamat ) ) {
             $wpdb->query( "ALTER TABLE `$table_kegiatan` ADD COLUMN `alamat_lokasi_uji` text DEFAULT NULL AFTER `lokasi_uji`" );
         }
+
+        self::ensure_unique_indexes();
+    }
+
+    /**
+     * Pastikan indeks unik peserta terpasang (idempoten).
+     *
+     * Pengaman terakhir di level database: dua request paralel dengan NIK/email sama
+     * tidak bisa sama-sama tersimpan, walaupun lock aplikasi dilewati.
+     */
+    public static function ensure_unique_indexes() {
+        global $wpdb;
+
+        // Cukup sekali per versi; ALTER + SHOW INDEX tidak perlu dijalankan tiap request.
+        if ( '1' === get_option( 'lsp_cert_index_version' ) ) {
+            return;
+        }
+
+        $table = $wpdb->prefix . 'lsp_pendaftaran';
+        if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) ) !== $table ) {
+            return;
+        }
+
+        $pasangan = array(
+            'uniq_kegiatan_nik'   => '`kegiatan_id`, `nik`',
+            'uniq_kegiatan_email' => '`kegiatan_id`, `email`',
+        );
+
+        foreach ( $pasangan as $nama_index => $kolom ) {
+            $ada = $wpdb->get_var( $wpdb->prepare(
+                "SHOW INDEX FROM `$table` WHERE Key_name = %s",
+                $nama_index
+            ) );
+
+            if ( $ada ) {
+                continue;
+            }
+
+            // Bila sudah ada data duplikat, indeks tidak boleh dipaksakan:
+            // ALTER akan gagal dan dibiarkan, pemeriksaan aplikasi tetap berjalan.
+            @$wpdb->query( "ALTER TABLE `$table` ADD UNIQUE KEY `$nama_index` ($kolom)" );
+
+            $terpasang = $wpdb->get_var( $wpdb->prepare(
+                "SHOW INDEX FROM `$table` WHERE Key_name = %s",
+                $nama_index
+            ) );
+            if ( ! $terpasang ) {
+                // Sengaja tidak dimatikan: kemungkinan ada data duplikat lama yang perlu
+                // dibereskan manual. Pemeriksaan aplikasi tetap berjalan.
+                error_log( "LSP Certification: indeks unik {$nama_index} gagal dipasang (periksa duplikat data)." );
+                return;
+            }
+        }
+
+        update_option( 'lsp_cert_index_version', '1' );
+    }
+
+    /**
+     * Daftarkan peserta secara atomik: kuota, duplikasi, dan insert dalam satu lock.
+     *
+     * Pemeriksaan kuota/duplikasi lama dilakukan terpisah sebelum INSERT, sehingga dua
+     * request paralel bisa sama-sama lolos. Fungsi ini memakai MySQL GET_LOCK per
+     * kegiatan sebagai mutex, ditambah indeks unik sebagai pengaman terakhir.
+     *
+     * @param int   $kegiatan_id
+     * @param array $data Data pendaftaran (sudah disanitasi pemanggil).
+     * @return array{status:string,id?:int,field?:string,message?:string}
+     */
+    public static function daftar_peserta( $kegiatan_id, $data ) {
+        global $wpdb;
+
+        $kegiatan_id = (int) $kegiatan_id;
+        $lock_name   = 'lsp_cert_daftar_' . $kegiatan_id;
+
+        $got = $wpdb->get_var( $wpdb->prepare( 'SELECT GET_LOCK(%s, 5)', $lock_name ) );
+        if ( '1' !== (string) $got ) {
+            return array(
+                'status'  => 'sibuk',
+                'message' => 'Server sedang memproses pendaftaran lain untuk kegiatan ini. Coba lagi sebentar.',
+            );
+        }
+
+        try {
+            $kegiatan = self::get_kegiatan( $kegiatan_id );
+            if ( ! $kegiatan ) {
+                return array( 'status' => 'invalid', 'message' => 'Kegiatan tidak ditemukan' );
+            }
+
+            $peserta_count = (int) self::get_peserta_count( $kegiatan_id );
+            if ( $peserta_count >= (int) $kegiatan->kuota ) {
+                return array( 'status' => 'penuh', 'message' => 'Kuota kegiatan sudah penuh' );
+            }
+
+            $nik   = isset( $data['nik'] ) ? (string) $data['nik'] : '';
+            $email = isset( $data['email'] ) ? (string) $data['email'] : '';
+            $ganda = self::cek_pendaftar_ganda( $kegiatan_id, $nik, $email );
+
+            if ( 'nik' === $ganda ) {
+                return array(
+                    'status'  => 'ganda',
+                    'field'   => 'nik',
+                    'message' => 'NIK ini sudah terdaftar pada kegiatan ini. Silakan hubungi admin bila ingin memperbaiki data.',
+                );
+            }
+            if ( 'email' === $ganda ) {
+                return array(
+                    'status'  => 'ganda',
+                    'field'   => 'email',
+                    'message' => 'Email ini sudah dipakai untuk mendaftar pada kegiatan ini. Silakan hubungi admin bila ingin memperbaiki data.',
+                );
+            }
+
+            $data['kegiatan_id'] = $kegiatan_id;
+            $insert_id = self::insert_pendaftaran( $data );
+
+            if ( ! $insert_id ) {
+                if ( false !== stripos( (string) $wpdb->last_error, 'Duplicate entry' ) ) {
+                    return array(
+                        'status'  => 'ganda',
+                        'message' => 'Data peserta ini sudah terdaftar pada kegiatan ini.',
+                    );
+                }
+                return array( 'status' => 'gagal', 'message' => 'Gagal menyimpan data pendaftaran' );
+            }
+
+            return array( 'status' => 'ok', 'id' => (int) $insert_id );
+        } finally {
+            $wpdb->query( $wpdb->prepare( 'SELECT RELEASE_LOCK(%s)', $lock_name ) );
+        }
     }
 
     // ============ KEGIATAN ============

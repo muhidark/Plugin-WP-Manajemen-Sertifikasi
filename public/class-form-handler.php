@@ -69,27 +69,6 @@ class LSP_Cert_Form_Handler {
             wp_send_json_error( array( 'message' => $masalah_identitas ) );
         }
         
-        $peserta_count = LSP_Cert_Database::get_peserta_count( $kegiatan_id );
-        if ( $peserta_count >= $kegiatan->kuota ) {
-            wp_send_json_error( array( 'message' => 'Kuota kegiatan sudah penuh' ) );
-        }
-
-        // Cegah pendaftaran ganda: NIK atau email yang sama pada kegiatan yang sama.
-        $nik_input   = sanitize_text_field( wp_unslash( $_POST['nik'] ) );
-        $email_input = sanitize_email( wp_unslash( $_POST['email'] ) );
-        $ganda       = LSP_Cert_Database::cek_pendaftar_ganda( $kegiatan_id, $nik_input, $email_input );
-
-        if ( 'nik' === $ganda ) {
-            wp_send_json_error( array(
-                'message' => 'NIK ini sudah terdaftar pada kegiatan ini. Silakan hubungi admin bila ingin memperbaiki data.',
-            ), 409 );
-        }
-        if ( 'email' === $ganda ) {
-            wp_send_json_error( array(
-                'message' => 'Email ini sudah dipakai untuk mendaftar pada kegiatan ini. Silakan hubungi admin bila ingin memperbaiki data.',
-            ), 409 );
-        }
-        
         // Prepare data
         $data = array(
             'kegiatan_id' => $kegiatan_id,
@@ -117,12 +96,23 @@ class LSP_Cert_Form_Handler {
             'persyaratan_admin' => isset( $_POST['persyaratan_admin'] ) ? array_map( 'sanitize_text_field', (array) $_POST['persyaratan_admin'] ) : array(),
         );
         
-        // Insert pendaftaran
-        $pendaftaran_id = LSP_Cert_Database::insert_pendaftaran( $data );
-        
-        if ( ! $pendaftaran_id ) {
-            wp_send_json_error( array( 'message' => 'Gagal menyimpan data pendaftaran' ) );
+        // Simpan secara atomik: kuota, duplikasi, dan insert dalam satu lock
+        // (mencegah over-quota & peserta ganda pada request paralel).
+        $hasil = LSP_Cert_Database::daftar_peserta( $kegiatan_id, $data );
+
+        if ( 'ok' !== $hasil['status'] ) {
+            $kode = 200;
+            if ( 'penuh' === $hasil['status'] || 'ganda' === $hasil['status'] ) {
+                $kode = 409;
+            } elseif ( 'sibuk' === $hasil['status'] ) {
+                $kode = 429;
+            } elseif ( 'invalid' === $hasil['status'] ) {
+                $kode = 404;
+            }
+            wp_send_json_error( array( 'message' => $hasil['message'] ), $kode );
         }
+
+        $pendaftaran_id = (int) $hasil['id'];
         
         // Save APL 02 answers — struktur dibangun ulang dari Master SKKNI.
         //
