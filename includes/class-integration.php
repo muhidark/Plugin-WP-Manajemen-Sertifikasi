@@ -134,45 +134,102 @@ class LSP_Cert_Integration {
                     'kode'      => $u['kode_unit'] ?? $u['kode'] ?? '',
                     'judul'     => $u['judul_unit'] ?? $u['judul'] ?? '',
                     'deskripsi' => $u['deskripsi_unit'] ?? $u['deskripsi'] ?? '',
-                    'elemen'    => $u['elemen'] ?? array(),
+                    'elemen'    => ! empty( $u['elemen'] ) && is_array( $u['elemen'] ) ? $u['elemen'] : array(),
+                    'sumber'    => $u['sumber'] ?? 'skkni_terstruktur',
                 );
             }
             return $units;
         }
 
+        // Cadangan: daftar unit dari meta Master Skema.
+        //
+        // Yang diambil HANYA kode dan judul unit — keduanya memang data master.
+        // Elemen dan KUK sengaja dibiarkan kosong: keduanya tidak boleh dikarang,
+        // karena langsung tercetak di dokumen resmi asesmen (FR.APL.02, FR.IA.01).
+        // Kelengkapan diverifikasi oleh get_competency_completeness() dan
+        // dijaga oleh LSP_Cert_Document_Printer::enforce_skkni_integrity().
         $unit_text = get_post_meta( $skema_id, 'unit_kompetensi', true );
-        
+
         if ( empty( $unit_text ) ) {
             return array();
         }
-        
+
         $units = array();
         $lines = explode( "\n", str_replace( "\r", "", $unit_text ) );
-        
+
         foreach ( $lines as $line ) {
             $line = trim( $line );
             if ( empty( $line ) ) {
                 continue;
             }
-            
+
             // Format: KODE | JUDUL
             $parts = explode( '|', $line );
             if ( count( $parts ) >= 2 ) {
                 $units[] = array(
                     'kode'   => trim( $parts[0] ),
                     'judul'  => trim( $parts[1] ),
-                    'elemen' => array(
-                        array(
-                            'nomor' => 1,
-                            'nama'  => 'Melaksanakan unit kompetensi ' . trim( $parts[1] ),
-                            'kuk'   => array( '1.1 Menerapkan prosedur kerja sesuai standar yang berlaku.' ),
-                        ),
-                    ),
+                    'elemen' => array(),
+                    'sumber' => 'meta_skema',
                 );
             }
         }
-        
+
         return $units;
+    }
+
+    /**
+     * Periksa kelengkapan data kompetensi (unit + elemen + KUK) untuk sebuah skema.
+     *
+     * Dipakai sebagai gate sebelum mencetak dokumen yang memuat Elemen/KUK.
+     * Tidak ada lagi data pengganti: bila master tidak lengkap, pencetakan dihentikan.
+     *
+     * @param int $skema_id
+     * @return array{is_complete:bool,total_units:int,units_lengkap:int,missing:array,elemen:int,kuk:int}
+     */
+    public static function get_competency_completeness( $skema_id ) {
+        $units   = self::get_unit_kompetensi( $skema_id );
+        $missing = array();
+        $elemen_total = 0;
+        $kuk_total    = 0;
+
+        foreach ( $units as $u ) {
+            $kode   = isset( $u['kode'] ) ? (string) $u['kode'] : '';
+            $judul  = isset( $u['judul'] ) ? (string) $u['judul'] : '';
+            $elemen = ! empty( $u['elemen'] ) && is_array( $u['elemen'] ) ? $u['elemen'] : array();
+
+            $jumlah_kuk_unit = 0;
+            foreach ( $elemen as $e ) {
+                $elemen_total++;
+                if ( ! empty( $e['kuk'] ) ) {
+                    $jumlah_kuk_unit += count( (array) $e['kuk'] );
+                }
+            }
+            $kuk_total += $jumlah_kuk_unit;
+
+            if ( empty( $elemen ) ) {
+                $missing[] = array(
+                    'kode'   => $kode,
+                    'judul'  => $judul,
+                    'alasan' => 'Elemen & KUK belum tersedia',
+                );
+            } elseif ( 0 === $jumlah_kuk_unit ) {
+                $missing[] = array(
+                    'kode'   => $kode,
+                    'judul'  => $judul,
+                    'alasan' => 'Elemen ada, KUK belum tersedia',
+                );
+            }
+        }
+
+        return array(
+            'is_complete'   => ( ! empty( $units ) && empty( $missing ) ),
+            'total_units'   => count( $units ),
+            'units_lengkap' => count( $units ) - count( $missing ),
+            'missing'       => $missing,
+            'elemen'        => $elemen_total,
+            'kuk'           => $kuk_total,
+        );
     }
 
     /**

@@ -248,6 +248,10 @@ class LSP_Cert_Document_Printer {
         $nama_paket_muk = $paket_muk ? $paket_muk->nama_paket : '';
         $kode_versi_muk = $paket_muk ? $paket_muk->kode_versi : '';
 
+        // Gerbang integritas SKKNI: dokumen yang memuat Elemen/KUK hanya boleh dicetak
+        // bila master kompetensi lengkap (tidak ada Elemen/KUK karangan).
+        self::enforce_skkni_integrity( $kegiatan->skema_id, $doc_type );
+
         // Validasi Cakupan Kelompok Pekerjaan sebelum cetak FR.IA.01, FR.IA.02, FR.IA.03 (Task 3 Phase IA-01-03C)
         self::enforce_kelompok_pekerjaan_coverage( $kegiatan->skema_id, $doc_type, $paket_muk_id );
 
@@ -355,6 +359,10 @@ class LSP_Cert_Document_Printer {
         $nama_paket_muk = $paket_muk ? $paket_muk->nama_paket : '';
         $kode_versi_muk = $paket_muk ? $paket_muk->kode_versi : '';
 
+        // Gerbang integritas SKKNI: dokumen yang memuat Elemen/KUK hanya boleh dicetak
+        // bila master kompetensi lengkap (tidak ada Elemen/KUK karangan).
+        self::enforce_skkni_integrity( $kegiatan->skema_id, $doc_type );
+
         // Validasi Cakupan Kelompok Pekerjaan sebelum cetak FR.IA.01, FR.IA.02, FR.IA.03 (Task 3 Phase IA-01-03C)
         self::enforce_kelompok_pekerjaan_coverage( $kegiatan->skema_id, $doc_type, $paket_muk_id );
 
@@ -415,6 +423,88 @@ class LSP_Cert_Document_Printer {
         if ( ! defined( 'LSP_CERT_TESTING' ) ) {
             exit;
         }
+    }
+
+    /**
+     * Gerbang integritas SKKNI: hentikan pencetakan dokumen yang memuat Elemen/KUK
+     * apabila master kompetensi belum lengkap.
+     *
+     * Menggantikan perilaku lama yang mengarang Elemen/KUK generik ketika data
+     * SKKNI terstruktur tidak tersedia — data karangan tidak boleh masuk dokumen resmi.
+     *
+     * @param int    $skema_id
+     * @param string $doc_type
+     */
+    public static function enforce_skkni_integrity( $skema_id, $doc_type ) {
+        $docs_butuh_elemen = array( 'apl02', 'ia01', 'all', 'bundle_all' );
+        if ( ! in_array( $doc_type, $docs_butuh_elemen, true ) ) {
+            return;
+        }
+
+        $status = LSP_Cert_Integration::get_competency_completeness( $skema_id );
+        if ( $status['is_complete'] ) {
+            return;
+        }
+
+        $doc_labels = array(
+            'apl02'      => 'FR.APL.02 (Asesmen Mandiri)',
+            'ia01'       => 'FR.IA.01 (Ceklis Observasi Aktivitas Praktik)',
+            'all'        => 'FR.APL.01 & FR.APL.02',
+            'bundle_all' => 'Seluruh Berkas Sertifikasi Asesi',
+        );
+        $doc_label = isset( $doc_labels[ $doc_type ] ) ? $doc_labels[ $doc_type ] : strtoupper( $doc_type );
+
+        if ( 0 === (int) $status['total_units'] ) {
+            $alasan_utama = '<p style="font-size: 13.5px; line-height: 1.5; color: #374151;">'
+                . 'Master Skema <strong>belum memiliki daftar Unit Kompetensi</strong>. '
+                . 'Tanpa unit kompetensi, dokumen <strong>' . esc_html( $doc_label ) . '</strong> tidak dapat disusun.'
+                . '</p>';
+            $daftar = '';
+        } else {
+            $alasan_utama = '<p style="font-size: 13.5px; line-height: 1.5; color: #374151;">'
+                . 'Dokumen <strong>' . esc_html( $doc_label ) . '</strong> memuat Elemen Kompetensi dan Kriteria Unjuk Kerja (KUK). '
+                . 'Keduanya wajib berasal dari data SKKNI resmi pada Master Skema — tidak boleh diisi data pengganti.'
+                . '</p>';
+
+            $items = '';
+            foreach ( $status['missing'] as $m ) {
+                $items .= '<li><strong style="font-family: monospace;">' . esc_html( $m['kode'] ) . '</strong> &mdash; '
+                    . esc_html( $m['judul'] ) . ' <span style="color:#b91c1c;">(' . esc_html( $m['alasan'] ) . ')</span></li>';
+            }
+            $daftar = '<div style="background: #ffffff; border: 1px solid #fecaca; border-radius: 6px; padding: 12px 16px; margin: 15px 0;">'
+                . '<div style="font-size: 12.5px; font-weight: bold; color: #991b1b; margin-bottom: 6px;">'
+                . 'Unit Kompetensi Tanpa Elemen/KUK (' . count( $status['missing'] ) . ' dari ' . (int) $status['total_units'] . ' unit):</div>'
+                . '<ul style="margin: 0; padding-left: 20px; font-size: 12.5px; line-height: 1.6; color: #374151;">' . $items . '</ul>'
+                . '</div>';
+        }
+
+        $admin_action = '';
+        if ( current_user_can( 'manage_options' ) ) {
+            $skema_url = admin_url( 'post.php?post=' . (int) $skema_id . '&action=edit' );
+            $admin_action = '<p style="margin-top: 18px;">'
+                . '<a href="' . esc_url( $skema_url ) . '" class="button button-primary" style="background:#0284c7; border-color:#0284c7; color:#fff; padding:6px 16px; text-decoration:none; border-radius:4px; font-weight:bold; display:inline-block;">'
+                . '👉 Lengkapi Data SKKNI pada Master Skema'
+                . '</a>'
+                . '</p>';
+        }
+
+        $message = '<div style="font-family: Arial, sans-serif; max-width: 650px; margin: 30px auto; padding: 24px; border: 2px solid #ef4444; border-radius: 8px; background: #fff5f5; color: #991b1b; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">'
+            . '<h2 style="margin-top: 0; color: #b91c1c; font-size: 18px;">🚫 Pencetakan Ditolak: Elemen/KUK Belum Lengkap</h2>'
+            . $alasan_utama
+            . '<p style="font-size: 13px; color: #4b5563;">'
+            . '<strong>Status Master:</strong> '
+            . (int) $status['units_lengkap'] . ' dari ' . (int) $status['total_units'] . ' unit lengkap'
+            . ' &middot; ' . (int) $status['elemen'] . ' elemen'
+            . ' &middot; ' . (int) $status['kuk'] . ' KUK'
+            . '</p>'
+            . $daftar
+            . $admin_action
+            . '<p style="margin-top: 20px; font-size: 12px; color: #6b7280; border-top: 1px solid #fecaca; padding-top: 10px;">'
+            . 'Dokumen ditahan otomatis di sisi server agar dokumen resmi tidak memuat Elemen/KUK hasil karangan.'
+            . '</p>'
+            . '</div>';
+
+        wp_die( $message, 'Pencetakan Ditolak — Elemen/KUK Belum Lengkap', array( 'response' => 403 ) );
     }
 
     /**
