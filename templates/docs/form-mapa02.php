@@ -218,12 +218,12 @@ $tgl_mapa02 = date_i18n( 'd F Y', strtotime( '-2 days', strtotime( $base_mapa_da
         <tr>
             <td width="28%" style="padding: 6px 10px;">Nama Penyusun</td>
             <td width="3%" style="text-align: center;">:</td>
-            <td style="padding: 6px 10px;"><strong><?php echo esc_html( $penyusun['name'] ?? 'Masriah' ); ?></strong></td>
+            <td style="padding: 6px 10px;"><strong><?php echo esc_html( $penyusun['name'] ?? '' ); ?></strong></td>
         </tr>
         <tr>
             <td style="padding: 6px 10px;">No. Reg.MET.</td>
             <td style="text-align: center;">:</td>
-            <td style="padding: 6px 10px; font-family: monospace;"><?php echo esc_html( $penyusun['no_reg'] ?? 'MET.000.032423 2019' ); ?></td>
+            <td style="padding: 6px 10px; font-family: monospace;"><?php echo esc_html( $penyusun['no_reg'] ?? '' ); ?></td>
         </tr>
         <tr>
             <td style="padding: 6px 10px; vertical-align: middle;">Tandatangan dan Tanggal</td>
@@ -238,12 +238,12 @@ $tgl_mapa02 = date_i18n( 'd F Y', strtotime( '-2 days', strtotime( $base_mapa_da
         <tr>
             <td style="padding: 6px 10px;">Nama Validator</td>
             <td style="text-align: center;">:</td>
-            <td style="padding: 6px 10px;"><strong><?php echo esc_html( $validator['name'] ?? 'Eko Prasyanto' ); ?></strong></td>
+            <td style="padding: 6px 10px;"><strong><?php echo esc_html( $validator['name'] ?? '' ); ?></strong></td>
         </tr>
         <tr>
             <td style="padding: 6px 10px;">No. Reg.MET.</td>
             <td style="text-align: center;">:</td>
-            <td style="padding: 6px 10px; font-family: monospace;"><?php echo esc_html( $validator['no_reg'] ?? 'MET.000.014249 2019' ); ?></td>
+            <td style="padding: 6px 10px; font-family: monospace;"><?php echo esc_html( $validator['no_reg'] ?? '' ); ?></td>
         </tr>
         <tr>
             <td style="padding: 6px 10px; vertical-align: middle;">Tandatangan dan Tanggal</td>

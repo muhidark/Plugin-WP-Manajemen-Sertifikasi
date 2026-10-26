@@ -434,6 +434,14 @@ $is_mapa = ( strpos( $doc_type, 'mapa' ) !== false );
     </div>
 
     <!-- Printable Paper Area -->
+    <?php if ( ! empty( $identitas_kosong ) && current_user_can( 'manage_options' ) ) : ?>
+        <div class="lsp-no-print" style="max-width:900px;margin:16px auto 0;padding:12px 16px;border:1px solid #fca5a5;background:#fef2f2;color:#991b1b;border-radius:6px;font-size:13px;line-height:1.5;">
+            <strong>Peringatan admin:</strong> identitas tim asesor belum lengkap &mdash;
+            <?php echo esc_html( implode( ', ', $identitas_kosong ) ); ?>.
+            Bagian tersebut tercetak <strong>kosong</strong> (tidak memakai nama contoh) dan dapat diisi manual setelah dicetak.
+        </div>
+    <?php endif; ?>
+
     <div class="lsp-paper-container">
         <?php if ( 'bundle_all' === $doc_type ) : ?>
             <!-- ============================================== -->

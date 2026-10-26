@@ -39,10 +39,10 @@ if ( empty( $nama_asesor ) ) {
 }
 
 // Data Penyusun & Validator
-$nama_penyusun  = ! empty( $penyusun['name'] ) ? $penyusun['name'] : 'Masriah';
-$met_penyusun   = ! empty( $penyusun['no_reg'] ) ? $penyusun['no_reg'] : 'MET.000.032423 2019';
-$nama_validator = ! empty( $validator['name'] ) ? $validator['name'] : 'Eko Prasyanto';
-$met_validator  = ! empty( $validator['no_reg'] ) ? $validator['no_reg'] : 'MET.000.014249 2019';
+$nama_penyusun  = ! empty( $penyusun['name'] ) ? $penyusun['name'] : '';
+$met_penyusun   = ! empty( $penyusun['no_reg'] ) ? $penyusun['no_reg'] : '';
+$nama_validator = ! empty( $validator['name'] ) ? $validator['name'] : '';
+$met_validator  = ! empty( $validator['no_reg'] ) ? $validator['no_reg'] : '';
 
 // Ambil instrumen materi IA.04 berdasarkan skema_id
 $skema_id   = ! empty( $kegiatan->skema_id ) ? (int) $kegiatan->skema_id : ( ! empty( $skema['id'] ) ? (int) $skema['id'] : 0 );

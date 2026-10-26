@@ -277,19 +277,19 @@ class LSP_Cert_Document_Printer {
         // Data ini dipakai di FR.MAPA.01 dan formulir sertifikasi lainnya
         $penyusun_nama = ! empty( $pendaftaran->penyusun_nama ) 
             ? $pendaftaran->penyusun_nama 
-            : ( ! empty( $kegiatan->penyusun_nama ) ? $kegiatan->penyusun_nama : ( $asesor['name'] ?? 'Masriah' ) );
+            : ( ! empty( $kegiatan->penyusun_nama ) ? $kegiatan->penyusun_nama : ( $asesor['name'] ?? '' ) );
         
         $penyusun_met = ! empty( $pendaftaran->penyusun_met )
             ? $pendaftaran->penyusun_met
-            : ( ! empty( $kegiatan->penyusun_met ) ? $kegiatan->penyusun_met : ( $asesor['no_reg'] ?? 'MET.000.032423 2019' ) );
+            : ( ! empty( $kegiatan->penyusun_met ) ? $kegiatan->penyusun_met : ( $asesor['no_reg'] ?? '' ) );
 
         $validator_nama = ! empty( $pendaftaran->validator_nama )
             ? $pendaftaran->validator_nama
-            : ( ! empty( $kegiatan->validator_nama ) ? $kegiatan->validator_nama : 'Eko Prasyanto' );
+            : ( ! empty( $kegiatan->validator_nama ) ? $kegiatan->validator_nama : '' );
 
         $validator_met = ! empty( $pendaftaran->validator_met )
             ? $pendaftaran->validator_met
-            : ( ! empty( $kegiatan->validator_met ) ? $kegiatan->validator_met : 'MET.000.014249 2019' );
+            : ( ! empty( $kegiatan->validator_met ) ? $kegiatan->validator_met : '' );
 
         $penyusun = array(
             'id'     => $pendaftaran->asesor_id ?: ($kegiatan->penyusun_id ?? 0),
@@ -302,6 +302,10 @@ class LSP_Cert_Document_Printer {
             'name'   => $validator_nama,
             'no_reg' => $validator_met,
         );
+
+        // Tidak ada identitas contoh: bila data master tidak diisi, cetak kosong
+        // dan beri peringatan khusus admin di halaman cetak (tidak ikut tercetak).
+        $identitas_kosong = self::daftar_identitas_kosong( $penyusun, $validator );
 
         // Master Document Layout
         include LSP_CERT_PLUGIN_DIR . 'templates/docs/document-layout.php';
@@ -385,19 +389,19 @@ class LSP_Cert_Document_Printer {
         // Ambil data Penyusun & Validator dari tingkat kegiatan
         $penyusun_nama = ! empty( $kegiatan->penyusun_nama ) 
             ? $kegiatan->penyusun_nama 
-            : ( ! empty( $kegiatan->penyusun_id ) && ( $asesor_p = LSP_Cert_Integration::get_asesor( $kegiatan->penyusun_id ) ) ? $asesor_p['name'] : 'Masriah' );
+            : ( ! empty( $kegiatan->penyusun_id ) && ( $asesor_p = LSP_Cert_Integration::get_asesor( $kegiatan->penyusun_id ) ) ? $asesor_p['name'] : '' );
 
         $penyusun_met = ! empty( $kegiatan->penyusun_met ) 
             ? $kegiatan->penyusun_met 
-            : ( ! empty( $kegiatan->penyusun_id ) && ( $asesor_p = LSP_Cert_Integration::get_asesor( $kegiatan->penyusun_id ) ) ? $asesor_p['no_reg'] : 'MET.000.032423 2019' );
+            : ( ! empty( $kegiatan->penyusun_id ) && ( $asesor_p = LSP_Cert_Integration::get_asesor( $kegiatan->penyusun_id ) ) ? $asesor_p['no_reg'] : '' );
 
         $validator_nama = ! empty( $kegiatan->validator_nama ) 
             ? $kegiatan->validator_nama 
-            : ( ! empty( $kegiatan->validator_id ) && ( $asesor_v = LSP_Cert_Integration::get_asesor( $kegiatan->validator_id ) ) ? $asesor_v['name'] : 'Eko Prasyanto' );
+            : ( ! empty( $kegiatan->validator_id ) && ( $asesor_v = LSP_Cert_Integration::get_asesor( $kegiatan->validator_id ) ) ? $asesor_v['name'] : '' );
 
         $validator_met = ! empty( $kegiatan->validator_met ) 
             ? $kegiatan->validator_met 
-            : ( ! empty( $kegiatan->validator_id ) && ( $asesor_v = LSP_Cert_Integration::get_asesor( $kegiatan->validator_id ) ) ? $asesor_v['no_reg'] : 'MET.000.014249 2019' );
+            : ( ! empty( $kegiatan->validator_id ) && ( $asesor_v = LSP_Cert_Integration::get_asesor( $kegiatan->validator_id ) ) ? $asesor_v['no_reg'] : '' );
 
         $penyusun = array(
             'id'     => $kegiatan->penyusun_id ?? 0,
@@ -417,12 +421,44 @@ class LSP_Cert_Document_Printer {
             'no_reg' => $penyusun_met,
         );
 
+        // Tidak ada identitas contoh: kosong tetap kosong, dengan peringatan untuk admin.
+        $identitas_kosong = self::daftar_identitas_kosong( $penyusun, $validator );
+
         // Master Document Layout
         include LSP_CERT_PLUGIN_DIR . 'templates/docs/document-layout.php';
 
         if ( ! defined( 'LSP_CERT_TESTING' ) ) {
             exit;
         }
+    }
+
+    /**
+     * Daftar label identitas tim asesor yang belum terisi pada data master.
+     *
+     * Dipakai untuk peringatan admin di halaman cetak. Tidak ada nama atau Nomor MET
+     * contoh yang dipakai sebagai pengganti: field kosong tetap kosong.
+     *
+     * @param array $penyusun
+     * @param array $validator
+     * @return string[]
+     */
+    public static function daftar_identitas_kosong( $penyusun, $validator ) {
+        $kosong = array();
+
+        if ( '' === trim( (string) ( $penyusun['name'] ?? '' ) ) ) {
+            $kosong[] = 'Nama Penyusun';
+        }
+        if ( '' === trim( (string) ( $penyusun['no_reg'] ?? '' ) ) ) {
+            $kosong[] = 'Nomor MET Penyusun';
+        }
+        if ( '' === trim( (string) ( $validator['name'] ?? '' ) ) ) {
+            $kosong[] = 'Nama Validator';
+        }
+        if ( '' === trim( (string) ( $validator['no_reg'] ?? '' ) ) ) {
+            $kosong[] = 'Nomor MET Validator';
+        }
+
+        return $kosong;
     }
 
     /**

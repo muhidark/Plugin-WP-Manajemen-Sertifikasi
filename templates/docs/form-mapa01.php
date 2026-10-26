@@ -433,9 +433,9 @@ $metode_label = $metode_labels[ $metode ] ?? 'Observasi Langsung';
         <tr>
             <td style="text-align: center; font-weight: bold; vertical-align: middle;">PENYUSUN</td>
             <td style="text-align: center; vertical-align: middle;">1</td>
-            <td style="vertical-align: middle;"><strong><?php echo esc_html( $penyusun['name'] ?? ( $asesor['name'] ?? 'Masriah' ) ); ?></strong></td>
+            <td style="vertical-align: middle;"><strong><?php echo esc_html( $penyusun['name'] ?? ( $asesor['name'] ?? '' ) ); ?></strong></td>
             <td style="text-align: center; vertical-align: middle; font-family: monospace;">
-                <?php echo esc_html( $penyusun['no_reg'] ?? ( $asesor['no_reg'] ?? 'MET.000.032423 2019' ) ); ?>
+                <?php echo esc_html( $penyusun['no_reg'] ?? ( $asesor['no_reg'] ?? '' ) ); ?>
             </td>
             <td style="text-align: center; vertical-align: middle; height: 50px;">
                 <div style="font-size: 10px; color: #64748b; margin-bottom: 15px;">( Tanda Tangan Penyusun )</div>
@@ -445,9 +445,9 @@ $metode_label = $metode_labels[ $metode ] ?? 'Observasi Langsung';
         <tr>
             <td style="text-align: center; font-weight: bold; vertical-align: middle;">VALIDATOR</td>
             <td style="text-align: center; vertical-align: middle;">1</td>
-            <td style="vertical-align: middle;"><strong><?php echo esc_html( $validator['name'] ?? 'Eko Prasyanto' ); ?></strong></td>
+            <td style="vertical-align: middle;"><strong><?php echo esc_html( $validator['name'] ?? '' ); ?></strong></td>
             <td style="text-align: center; vertical-align: middle; font-family: monospace;">
-                <?php echo esc_html( $validator['no_reg'] ?? 'MET.000.014249 2019' ); ?>
+                <?php echo esc_html( $validator['no_reg'] ?? '' ); ?>
             </td>
             <td style="text-align: center; vertical-align: middle; height: 50px;">
                 <div style="font-size: 10px; color: #64748b; margin-bottom: 15px;">( Tanda Tangan Validator )</div>
