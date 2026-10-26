@@ -11,13 +11,16 @@
 
 | Plugin | Commit | Working tree |
 |---|---|---|
-| LSP Certification Management | `19e387c` | bersih (0 perubahan) |
+| LSP Certification Management | `ea89774` (tag `v1.1.2`) | bersih (0 perubahan) |
 | LSP Core Management | `63dab58` | bersih (0 perubahan) |
 
 Selama REL-01 **tidak ada perubahan kode fungsional**. Satu-satunya perubahan adalah
 penambahan entri ringkasan rilis pada `readme.txt` Certification (dokumentasi, bukan perilaku) —
-diperlukan oleh §10 brief REL-01. Paket dibangun ulang setelah perubahan itu dan checksum
-dihitung ulang.
+diperlukan oleh §10 brief REL-01 — dan berkas dokumentasi rilis di `docs/release/`. Paket dibangun
+ulang setelah perubahan `readme.txt` dan checksum dihitung ulang dari paket final itu.
+
+Catatan commit: kode micro-fix ada di `19e387c`; `readme.txt` + dokumen rilis ada di `ea89774`
+(tag `v1.1.2`). Isi paket identik dengan isi working tree pada `ea89774`.
 
 Tidak ditemukan bug baru yang memaksa perubahan kode. Tidak ada release blocker.
 

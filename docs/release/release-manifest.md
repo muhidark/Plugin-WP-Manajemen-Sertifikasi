@@ -9,7 +9,7 @@
 | LSP Core Management | **1.1.1** |
 | Skema database Certification | **1.1.0** |
 | Target environment | Produksi `https://lspkomunikasi.id` (WordPress) |
-| Commit Certification | `19e387c` |
+| Commit Certification | `ea89774` (tag `v1.1.2`) — kode micro-fix di `19e387c`, dokumen+changelog di `ea89774` |
 | Commit Core | `63dab58` |
 | Status rilis | **GO WITH NOTES** — lihat bagian Validation Status |
 
