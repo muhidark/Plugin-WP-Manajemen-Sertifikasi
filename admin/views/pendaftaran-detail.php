@@ -395,6 +395,66 @@
                         </select>
                     </div>
 
+                    <!-- 3b. Status FR.APL.02 (asesmen mandiri) -->
+                    <?php
+                    $apl02_kep = LSP_Cert_Integration::get_apl02_kelengkapan( (int) $pendaftaran->id );
+
+                    if ( ! $apl02_kep['lengkap'] ) {
+                        $apl02_warna  = '#b91c1c';
+                        $apl02_latar  = '#fef2f2';
+                        $apl02_teks   = '#991b1b';
+                    } elseif ( $apl02_kep['bk'] > 0 ) {
+                        $apl02_warna  = '#b45309';
+                        $apl02_latar  = '#fffbeb';
+                        $apl02_teks   = '#92400e';
+                    } else {
+                        $apl02_warna  = '#15803d';
+                        $apl02_latar  = '#f0fdf4';
+                        $apl02_teks   = '#166534';
+                    }
+                    ?>
+                    <div style="margin-bottom: 16px; border-left: 4px solid <?php echo esc_attr( $apl02_warna ); ?>; background: <?php echo esc_attr( $apl02_latar ); ?>; padding: 12px 16px; border-radius: 4px;">
+                        <div style="font-size: 12.5px; font-weight: 700; color: <?php echo esc_attr( $apl02_teks ); ?>; margin-bottom: 4px;">
+                            FR.APL.02 &mdash; Asesmen Mandiri
+                        </div>
+                        <div style="font-size: 12.5px; line-height: 1.55; color: #374151;">
+                            <?php if ( 0 === (int) $apl02_kep['total'] ) : ?>
+                                Master SKKNI skema ini belum memiliki elemen kompetensi &mdash; FR.APL.02 tidak dapat dinilai.
+                            <?php else : ?>
+                                Terisi <strong><?php echo (int) $apl02_kep['terjawab']; ?></strong> dari
+                                <strong><?php echo (int) $apl02_kep['total']; ?></strong> elemen
+                                (K: <?php echo (int) $apl02_kep['k']; ?>, BK: <?php echo (int) $apl02_kep['bk']; ?>).
+                                <?php if ( ! $apl02_kep['lengkap'] ) : ?>
+                                    <br><strong><?php echo (int) $apl02_kep['total'] - (int) $apl02_kep['terjawab']; ?> elemen masih kosong</strong>
+                                    &mdash; pendaftaran belum bisa diterima sampai dilengkapi.
+                                    <?php
+                                    $contoh = array();
+                                    foreach ( array_slice( $apl02_kep['kosong'], 0, 3 ) as $k ) {
+                                        $contoh[] = $k['kode'] . ' elemen ' . $k['nomor'];
+                                    }
+                                    if ( $contoh ) {
+                                        echo '<br><span style="font-size: 11.5px; color: #7f1d1d;">Contoh: ' . esc_html( implode( '; ', $contoh ) ) . '</span>';
+                                    }
+                                    ?>
+                                <?php endif; ?>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+
+                    <?php if ( (int) $apl02_kep['bk'] > 0 ) : ?>
+                    <div style="margin-bottom: 16px; background: #fffbeb; border: 1px solid #fde68a; border-radius: 4px; padding: 12px 16px;">
+                        <label style="display: flex; align-items: flex-start; gap: 8px; font-size: 12.5px; color: #92400e; cursor: pointer;">
+                            <input type="checkbox" name="konfirmasi_bk" id="konfirmasi_bk" value="1" style="margin-top: 2px;"
+                                <?php checked( ! empty( $pendaftaran->konfirmasi_bk ) ); ?>>
+                            <span>
+                                <strong>Sudah dikonfirmasi ke asesi</strong> &mdash; wajib dicentang karena
+                                <?php echo (int) $apl02_kep['bk']; ?> elemen dijawab <strong>BK</strong> (belum kompeten).
+                                Tanpa konfirmasi, pendaftaran tidak akan diterima.
+                            </span>
+                        </label>
+                    </div>
+                    <?php endif; ?>
+
                     <!-- 4. Catatan Admin -->
                     <div style="margin-bottom: 20px;">
                         <label for="catatan" style="display: block; font-weight: 600; font-size: 13px; margin-bottom: 6px; color: #1e293b;">
@@ -545,7 +605,8 @@ jQuery(document).ready(function($) {
             status_rekomendasi: statusRekomendasi,
             asesor_id: asesorId,
             paket_muk_id: $('#paket_muk_id').val(),
-            catatan: $('#catatan').val()
+            catatan: $('#catatan').val(),
+            konfirmasi_bk: $('#konfirmasi_bk').is(':checked') ? 1 : 0
         };
 
         $.post(lspCert.ajax_url, data, function(response) {
@@ -556,9 +617,17 @@ jQuery(document).ready(function($) {
             } else {
                 alert('Gagal: ' + (response.data || 'Terjadi kesalahan'));
             }
-        }).fail(function() {
+        }).fail(function(xhr) {
             $btn.prop('disabled', false).html(originalText);
-            alert('Koneksi terputus atau server error.');
+
+            var pesan = 'Koneksi terputus atau server error.';
+            if (xhr && xhr.responseJSON && xhr.responseJSON.data) {
+                pesan = xhr.responseJSON.data.message || pesan;
+                if (Array.isArray(xhr.responseJSON.data.belum_dijawab) && xhr.responseJSON.data.belum_dijawab.length) {
+                    pesan += '\n\nBelum dijawab:\n- ' + xhr.responseJSON.data.belum_dijawab.join('\n- ');
+                }
+            }
+            alert(pesan);
         });
     });
 });

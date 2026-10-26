@@ -225,6 +225,22 @@ $nonce_publik = wp_create_nonce( 'lsp_cert_public_nonce' );
 $nik   = '3273' . wp_rand( 100000000000, 999999999999 );
 $email = 'peserta.stg01.' . wp_rand( 1000, 9999 ) . '@example.test';
 
+// FR.APL.02 wajib lengkap sejak PH-11: bangun payload dari master, semua K.
+$apl02_payload = array();
+foreach ( LSP_Cert_Integration::get_unit_kompetensi( $skema_id ) as $unit_master ) {
+    $kode_unit = trim( (string) ( $unit_master['kode'] ?? '' ) );
+    if ( '' === $kode_unit ) { continue; }
+    foreach ( (array) ( $unit_master['elemen'] ?? array() ) as $idx_master => $el_master ) {
+        $apl02_payload[] = array(
+            'kode'         => $kode_unit,
+            'elemen_nomor' => isset( $el_master['nomor'] ) ? (int) $el_master['nomor'] : ( $idx_master + 1 ),
+            'jawaban'      => 'K',
+        );
+    }
+}
+
+$wpdb->query( "DELETE FROM {$wpdb->options} WHERE option_name LIKE '_transient_lsp_cert_rl_daftar_%' OR option_name LIKE '_transient_timeout_lsp_cert_rl_daftar_%'" );
+
 $r = minta( $ajax, '', array(
     'action'        => 'lsp_cert_submit_pendaftaran',
     'nonce'         => $nonce_publik,
@@ -239,8 +255,10 @@ $r = minta( $ajax, '', array(
     'telepon'       => '081200000001',
     'email'         => $email,
     'pendidikan'    => 'S1',
+    'apl02'         => $apl02_payload,
 ) );
 cek( 'AJAX pendaftaran publik', $r['code'], 200 );
+cek_true( 'APL.02 lengkap tersimpan', false !== strpos( $r['body'], '"apl02_status":"lengkap"' ) );
 cek_true( 'respons sukses', false !== strpos( $r['body'], '"success":true' ) );
 
 $pendaftaran_id = (int) $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$tabel_p} WHERE kegiatan_id = %d ORDER BY id DESC LIMIT 1", $kegiatan_id ) );

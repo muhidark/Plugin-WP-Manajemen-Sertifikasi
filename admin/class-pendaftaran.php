@@ -131,6 +131,67 @@ class LSP_Cert_Pendaftaran {
             $data['tanggal_persetujuan'] = current_time( 'mysql' );
         }
 
+        // -----------------------------------------------------------------
+        // Gerbang FR.APL.02 — hanya bila pendaftaran sedang DITERIMA.
+        //
+        // Dokumen asesmen mandiri dengan kolom K/BK kosong tidak boleh lolos
+        // ke tahap asesmen: asesor akan menerima berkas yang tidak menyatakan
+        // apa pun. Jawaban BK juga wajib dikonfirmasi ke asesi lebih dulu.
+        // -----------------------------------------------------------------
+        if ( 'disetujui' === $status_rekomendasi || 'lengkap' === $status_kelengkapan ) {
+            $kep = LSP_Cert_Integration::get_apl02_kelengkapan( $id );
+
+            if ( 0 === (int) $kep['total'] ) {
+                wp_send_json_error( array(
+                    'message' => 'Master SKKNI skema ini belum punya elemen kompetensi, sehingga FR.APL.02 tidak bisa dinilai. Lengkapi data SKKNI lebih dulu.',
+                ), 409 );
+            }
+
+            if ( ! $kep['terisi'] ) {
+                wp_send_json_error( array(
+                    'message'          => sprintf(
+                        'FR.APL.02 belum diisi sama sekali (0 dari %d elemen). Minta asesi mengisi asesmen mandiri (K/BK pada semua elemen) sebelum pendaftaran diterima.',
+                        (int) $kep['total']
+                    ),
+                    'apl02_terjawab'   => 0,
+                    'apl02_total'      => (int) $kep['total'],
+                ), 409 );
+            }
+
+            if ( ! $kep['lengkap'] ) {
+                $contoh = array();
+                foreach ( array_slice( $kep['kosong'], 0, 5 ) as $k ) {
+                    $contoh[] = $k['kode'] . ' — elemen ' . $k['nomor'] . ( '' !== $k['nama'] ? ': ' . $k['nama'] : '' );
+                }
+
+                wp_send_json_error( array(
+                    'message'         => sprintf(
+                        'FR.APL.02 belum lengkap: %d dari %d elemen belum dijawab. Pendaftaran belum bisa diterima.',
+                        (int) ( $kep['total'] - $kep['terjawab'] ),
+                        (int) $kep['total']
+                    ),
+                    'apl02_terjawab'  => (int) $kep['terjawab'],
+                    'apl02_total'     => (int) $kep['total'],
+                    'belum_dijawab'   => $contoh,
+                ), 409 );
+            }
+
+            if ( (int) $kep['bk'] > 0 && empty( $_POST['konfirmasi_bk'] ) ) {
+                wp_send_json_error( array(
+                    'message'       => sprintf(
+                        'Ada %d elemen dijawab BK. Konfirmasi ke asesi dulu, lalu centang "sudah dikonfirmasi ke asesi" sebelum menerima pendaftaran.',
+                        (int) $kep['bk']
+                    ),
+                    'apl02_bk'      => (int) $kep['bk'],
+                    'butuh_konfirmasi_bk' => true,
+                ), 409 );
+            }
+
+            if ( (int) $kep['bk'] > 0 ) {
+                $data['konfirmasi_bk'] = current_time( 'mysql' );
+            }
+        }
+
         LSP_Cert_Database::update_pendaftaran( $id, $data );
         wp_send_json_success( array( 'message' => 'Verifikasi dan Rekomendasi Asesmen berhasil disimpan' ) );
     }

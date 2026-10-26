@@ -263,6 +263,7 @@ class LSP_Cert_Document_Printer {
         // Gerbang integritas SKKNI: dokumen yang memuat Elemen/KUK hanya boleh dicetak
         // bila master kompetensi lengkap (tidak ada Elemen/KUK karangan).
         self::enforce_skkni_integrity( $kegiatan->skema_id, $doc_type );
+        self::enforce_apl02_completeness( (int) $pendaftaran->id, $doc_type );
 
         // Validasi Cakupan Kelompok Pekerjaan sebelum cetak FR.IA.01, FR.IA.02, FR.IA.03 (Task 3 Phase IA-01-03C)
         self::enforce_kelompok_pekerjaan_coverage( $kegiatan->skema_id, $doc_type, $paket_muk_id );
@@ -478,6 +479,76 @@ class LSP_Cert_Document_Printer {
         }
 
         return $kosong;
+    }
+
+    /**
+     * Gerbang kelengkapan FR.APL.02.
+     *
+     * Dokumen asesmen mandiri dengan kolom K/BK kosong tidak boleh dicetak:
+     * begitu ditandatangani, formulir kosong menjadi bukti resmi bahwa asesi
+     * tidak menyatakan apa pun. Cetak ditahan sampai seluruh elemen dijawab.
+     *
+     * @param int    $pendaftaran_id
+     * @param string $doc_type
+     */
+    public static function enforce_apl02_completeness( $pendaftaran_id, $doc_type ) {
+        $docs = array( 'apl02', 'all', 'bundle_all' );
+        if ( ! in_array( $doc_type, $docs, true ) ) {
+            return;
+        }
+
+        $kep = LSP_Cert_Integration::get_apl02_kelengkapan( $pendaftaran_id );
+
+        if ( 0 === (int) $kep['total'] ) {
+            return; // master belum punya elemen — sudah ditahan gerbang SKKNI
+        }
+
+        if ( $kep['lengkap'] ) {
+            return;
+        }
+
+        $doc_labels = array(
+            'apl02'      => 'FR.APL.02 (Asesmen Mandiri)',
+            'all'        => 'FR.APL.01 & FR.APL.02',
+            'bundle_all' => 'Seluruh Berkas Sertifikasi Asesi',
+        );
+        $label = isset( $doc_labels[ $doc_type ] ) ? $doc_labels[ $doc_type ] : strtoupper( $doc_type );
+
+        $items = '';
+        foreach ( array_slice( $kep['kosong'], 0, 10 ) as $k ) {
+            $items .= '<li><strong style="font-family: monospace;">' . esc_html( $k['kode'] ) . '</strong> &mdash; Elemen '
+                . (int) $k['nomor'] . ( '' !== $k['nama'] ? ': ' . esc_html( $k['nama'] ) : '' ) . '</li>';
+        }
+        if ( count( $kep['kosong'] ) > 10 ) {
+            $items .= '<li>&hellip; dan ' . ( count( $kep['kosong'] ) - 10 ) . ' elemen lainnya</li>';
+        }
+
+        $sisa = (int) $kep['total'] - (int) $kep['terjawab'];
+
+        wp_die(
+            '<div style="max-width: 720px; margin: 40px auto; padding: 0 20px; font-family: Georgia, serif; color: #111827;">'
+            . '<div style="border-left: 4px solid #b91c1c; background: #fef2f2; padding: 18px 22px; border-radius: 4px;">'
+            . '<h1 style="margin: 0 0 6px; font-size: 20px; color: #991b1b;">FR.APL.02 Belum Lengkap</h1>'
+            . '<p style="margin: 0; font-size: 13px; color: #7f1d1d;">Pencetakan <strong>' . esc_html( $label ) . '</strong> ditahan.</p>'
+            . '</div>'
+            . '<p style="font-size: 13.5px; line-height: 1.6; margin-top: 18px;">'
+            . 'Asesmen mandiri baru terisi <strong>' . (int) $kep['terjawab'] . ' dari ' . (int) $kep['total'] . ' elemen</strong>'
+            . ( $sisa > 0 ? ' &mdash; ' . $sisa . ' elemen masih kosong' : '' ) . '. '
+            . 'Formulir asesmen mandiri yang kosong tidak boleh dicetak dan ditandatangani, karena akan menjadi '
+            . 'bukti resmi bahwa asesi tidak menyatakan kompeten maupun belum kompeten.'
+            . '</p>'
+            . '<div style="background: #ffffff; border: 1px solid #fecaca; border-radius: 6px; padding: 12px 16px;">'
+            . '<div style="font-size: 12.5px; font-weight: bold; color: #991b1b; margin-bottom: 6px;">Elemen yang belum dijawab:</div>'
+            . '<ul style="margin: 0; padding-left: 20px; font-size: 12.5px; line-height: 1.6; color: #374151;">' . $items . '</ul>'
+            . '</div>'
+            . '<p style="font-size: 12.5px; color: #4b5563; margin-top: 16px;">'
+            . 'Minta asesi melengkapi FR.APL.02 (setiap elemen dipilih <strong>K</strong> atau <strong>BK</strong>), '
+            . 'lalu ulangi pencetakan.'
+            . '</p>'
+            . '</div>',
+            'FR.APL.02 Belum Lengkap',
+            array( 'response' => 409 )
+        );
     }
 
     /**

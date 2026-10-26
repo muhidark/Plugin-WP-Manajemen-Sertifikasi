@@ -47,6 +47,18 @@ class LSP_Cert_Activator {
         if ( empty( $col_alamat ) ) {
             $wpdb->query( "ALTER TABLE `$table` ADD COLUMN `alamat_lokasi_uji` text DEFAULT NULL AFTER `lokasi_uji`" );
         }
+
+        // Kolom pendaftaran yang ditambahkan setelah rilis awal.
+        $table_p = $wpdb->prefix . 'lsp_pendaftaran';
+
+        if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_p ) ) !== $table_p ) {
+            return;
+        }
+
+        $col_bk = $wpdb->get_results( "SHOW COLUMNS FROM `$table_p` LIKE 'konfirmasi_bk'" );
+        if ( empty( $col_bk ) ) {
+            $wpdb->query( "ALTER TABLE `$table_p` ADD COLUMN `konfirmasi_bk` datetime DEFAULT NULL AFTER `tanggal_persetujuan`" );
+        }
     }
 
     public static function create_tables() {
@@ -117,6 +129,7 @@ class LSP_Cert_Activator {
             validator_nama varchar(255) DEFAULT NULL,
             validator_met varchar(100) DEFAULT NULL,
             tanggal_persetujuan datetime DEFAULT NULL,
+            konfirmasi_bk datetime DEFAULT NULL,
             catatan_admin text DEFAULT NULL,
             created_at datetime DEFAULT CURRENT_TIMESTAMP,
             updated_at datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

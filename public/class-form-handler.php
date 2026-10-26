@@ -69,6 +69,42 @@ class LSP_Cert_Form_Handler {
             wp_send_json_error( array( 'message' => $masalah_identitas ) );
         }
         
+
+        // FR.APL.02 — dikumpulkan & divalidasi SEBELUM pendaftaran disimpan.
+        //
+        // Jawaban yang dikirim sebagian ditolak: dokumen asesmen mandiri dengan
+        // kolom K/BK kosong tidak boleh tersimpan diam-diam. Pendaftaran tanpa
+        // APL.02 sama sekali tetap diterima, tetapi statusnya "belum diisi" dan
+        // tidak bisa diterima admin sampai dilengkapi (lihat ajax_save_verifikasi).
+        $apl02_input = array();
+        if ( isset( $_POST['apl02'] ) && is_array( $_POST['apl02'] ) ) {
+            $apl02_input = $_POST['apl02'];
+        } elseif ( isset( $_POST['apl02_jawaban'] ) && is_array( $_POST['apl02_jawaban'] ) ) {
+            $apl02_input = $_POST['apl02_jawaban'];
+        }
+
+        $susun           = array( 'jawaban' => array(), 'diabaikan' => 0 );
+        $apl02_diabaikan = 0;
+
+        if ( ! empty( $apl02_input ) ) {
+            $susun           = self::susun_jawaban_apl02( (int) $kegiatan->skema_id, $apl02_input );
+            $apl02_diabaikan = $susun['diabaikan'];
+
+            $belum = self::elemen_belum_dijawab( (int) $kegiatan->skema_id, $susun['jawaban'] );
+            if ( ! empty( $belum ) ) {
+                $total = count( $belum ) + count( $susun['jawaban'] );
+                wp_send_json_error( array(
+                    'message'        => sprintf(
+                        'FR.APL.02 belum lengkap: %d dari %d elemen belum dijawab. Setiap elemen wajib dipilih Kompeten (K) atau Belum Kompeten (BK).',
+                        count( $belum ),
+                        $total
+                    ),
+                    'belum_dijawab'  => array_slice( $belum, 0, 5 ),
+                    'jumlah_kosong'  => count( $belum ),
+                ), 422 );
+            }
+        }
+
         // Prepare data
         $data = array(
             'kegiatan_id' => $kegiatan_id,
@@ -113,35 +149,22 @@ class LSP_Cert_Form_Handler {
         }
 
         $pendaftaran_id = (int) $hasil['id'];
-        
-        // Save APL 02 answers — struktur dibangun ulang dari Master SKKNI.
-        //
-        // Browser hanya boleh menentukan pilihan K/BK beserta kode unit & nomor elemen.
-        // Judul unit dan nama elemen SELALU diambil dari master, sehingga manipulasi
-        // hidden field tidak bisa mengubah isi dokumen resmi.
-        $apl02_input = array();
-        if ( isset( $_POST['apl02'] ) && is_array( $_POST['apl02'] ) ) {
-            $apl02_input = $_POST['apl02'];
-        } elseif ( isset( $_POST['apl02_jawaban'] ) && is_array( $_POST['apl02_jawaban'] ) ) {
-            $apl02_input = $_POST['apl02_jawaban'];
-        }
 
-        $apl02_diabaikan = 0;
-        if ( ! empty( $apl02_input ) ) {
-            $susun = self::susun_jawaban_apl02( (int) $kegiatan->skema_id, $apl02_input );
-            $apl02_diabaikan = $susun['diabaikan'];
-
-            foreach ( $susun['jawaban'] as $row ) {
-                $row['pendaftaran_id'] = $pendaftaran_id;
-                LSP_Cert_Database::insert_apl02_jawaban( $row );
-            }
+        // Simpan jawaban APL.02 yang sudah divalidasi lengkap di atas.
+        // Struktur baris (judul unit, nama elemen) berasal dari master, bukan request.
+        $apl02_tersimpan = 0;
+        foreach ( $susun['jawaban'] as $row ) {
+            $row['pendaftaran_id'] = $pendaftaran_id;
+            LSP_Cert_Database::insert_apl02_jawaban( $row );
+            $apl02_tersimpan++;
         }
         
         wp_send_json_success( array(
             'message' => 'Pendaftaran berhasil disimpan',
             'pendaftaran_id' => $pendaftaran_id,
-            'apl02_tersimpan' => isset( $susun['jawaban'] ) ? count( $susun['jawaban'] ) : 0,
+            'apl02_tersimpan' => $apl02_tersimpan,
             'apl02_diabaikan' => $apl02_diabaikan,
+            'apl02_status'    => $apl02_tersimpan > 0 ? 'lengkap' : 'kosong',
         ));
     }
 
@@ -219,6 +242,41 @@ class LSP_Cert_Form_Handler {
         }
 
         return array( 'jawaban' => array_values( $terpakai ), 'diabaikan' => $diabaikan );
+    }
+
+    /**
+     * Daftar elemen master yang belum dijawab pada kiriman APL.02.
+     *
+     * @param int   $skema_id
+     * @param array $jawaban Baris hasil susun_jawaban_apl02().
+     * @return array Daftar ['kode','nomor','nama'] yang belum dijawab.
+     */
+    private static function elemen_belum_dijawab( $skema_id, $jawaban ) {
+        $terjawab = array();
+        foreach ( (array) $jawaban as $row ) {
+            $terjawab[ ( $row['unit_kompetensi_kode'] ?? '' ) . '|' . (int) ( $row['elemen_nomor'] ?? 0 ) ] = true;
+        }
+
+        $belum = array();
+        foreach ( LSP_Cert_Integration::get_unit_kompetensi( (int) $skema_id ) as $unit ) {
+            $kode = trim( (string) ( $unit['kode'] ?? '' ) );
+            if ( '' === $kode ) {
+                continue;
+            }
+
+            foreach ( (array) ( $unit['elemen'] ?? array() ) as $idx => $e ) {
+                $nomor = isset( $e['nomor'] ) ? (int) $e['nomor'] : ( $idx + 1 );
+                if ( ! isset( $terjawab[ $kode . '|' . $nomor ] ) ) {
+                    $belum[] = array(
+                        'kode'  => $kode,
+                        'nomor' => $nomor,
+                        'nama'  => (string) ( $e['nama'] ?? '' ),
+                    );
+                }
+            }
+        }
+
+        return $belum;
     }
 
     /**

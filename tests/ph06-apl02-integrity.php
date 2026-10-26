@@ -99,6 +99,23 @@ $apl02[] = array( 'kode' => $unit1['kode'], 'elemen_nomor' => 99, 'jawaban' => '
 $apl02[] = array( 'kode' => $unit1['kode'], 'elemen_nomor' => (int) $el1['nomor'], 'jawaban' => 'KOMPETEN' );
 $apl02[] = array( 'kode' => $unit1['kode'], 'elemen_nomor' => (int) $el1['nomor'], 'jawaban' => '' );
 
+// Sejak PH-11 kiriman APL.02 sebagian ditolak, jadi sisa elemen master dilengkapi
+// dengan K. Entri palsu di atas tetap dikirim untuk menguji penyaringan.
+$sudah_diisi = array( $unit1['kode'] . '#' . (int) $el1['nomor'] );
+if ( $el2 ) { $sudah_diisi[] = $unit1['kode'] . '#' . (int) $el2['nomor']; }
+
+$total_master = 0;
+foreach ( LSP_Cert_Integration::get_unit_kompetensi( (int) $skema_id ) as $unit_m ) {
+    $kode_m = trim( (string) ( $unit_m['kode'] ?? '' ) );
+    if ( '' === $kode_m ) { continue; }
+    foreach ( (array) ( $unit_m['elemen'] ?? array() ) as $idx_m => $el_m ) {
+        $nomor_m = isset( $el_m['nomor'] ) ? (int) $el_m['nomor'] : ( $idx_m + 1 );
+        $total_master++;
+        if ( in_array( $kode_m . '#' . $nomor_m, $sudah_diisi, true ) ) { continue; }
+        $apl02[] = array( 'kode' => $kode_m, 'elemen_nomor' => $nomor_m, 'jawaban' => 'K' );
+    }
+}
+
 $body = array(
     'action'         => 'lsp_cert_submit_pendaftaran',
     'nonce'          => $nonce,
@@ -135,7 +152,7 @@ $pid = 0;
 if ( preg_match( '/"pendaftaran_id":(\d+)/', (string) $resp, $m ) ) { $pid = (int) $m[1]; }
 cek_true( 'A3 id pendaftaran dikembalikan', $pid > 0 );
 
-$harap_valid = $el2 ? 2 : 1;
+$harap_valid = $total_master;
 cek( 'A4 jumlah jawaban sah tersimpan', (int) preg_match( '/"apl02_tersimpan":(\d+)/', (string) $resp, $m2 ) ? (int) $m2[1] : -1, $harap_valid );
 $harap_abaikan = 4; // kode asing, elemen 99, jawaban KOMPETEN, jawaban kosong
 cek( 'A5 jumlah entri diabaikan', (int) preg_match( '/"apl02_diabaikan":(\d+)/', (string) $resp, $m3 ) ? (int) $m3[1] : -1, $harap_abaikan );
@@ -148,9 +165,21 @@ if ( ! empty( $rows ) ) {
     cek( 'B2 judul unit dari master (bukan palsu)', $rows[0]->unit_kompetensi_judul, $unit1['judul'] );
     cek( 'B3 nama elemen dari master (bukan palsu)', $rows[0]->elemen_nama, $el1['nama'] );
     cek( 'B4 jawaban K tersimpan', strtoupper( $rows[0]->jawaban ), 'K' );
-    if ( $el2 && isset( $rows[1] ) ) {
-        cek( 'B5 jawaban bk dinormalkan', strtoupper( $rows[1]->jawaban ), 'BK' );
-        cek( 'B6 elemen kedua dari master', $rows[1]->elemen_nama, $el2['nama'] );
+    if ( $el2 ) {
+        // Cari baris elemen kedua secara eksplisit: urutan hasil query diurutkan per
+        // nomor elemen, sehingga baris ke-2 belum tentu milik unit yang sama.
+        $baris_el2 = null;
+        foreach ( $rows as $r ) {
+            if ( (int) $r->elemen_nomor === (int) $el2['nomor'] && $r->unit_kompetensi_kode === $unit1['kode'] ) {
+                $baris_el2 = $r;
+                break;
+            }
+        }
+        cek_true( 'B5 baris elemen kedua ditemukan', null !== $baris_el2 );
+        if ( $baris_el2 ) {
+            cek( 'B5b jawaban bk dinormalkan', strtoupper( $baris_el2->jawaban ), 'BK' );
+            cek( 'B6 elemen kedua dari master', $baris_el2->elemen_nama, $el2['nama'] );
+        }
     }
     cek_true( 'B7 tidak ada judul palsu di DB', false === strpos( wp_json_encode( $rows ), 'PALSU' ) );
 }

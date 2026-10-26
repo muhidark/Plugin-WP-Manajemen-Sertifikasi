@@ -1,6 +1,6 @@
 # PH-10 — Paket Produksi & Manifest Rilis
 
-**Tanggal:** 26 Oktober 2026
+**Tanggal:** 27 Oktober 2026 (revisi: Certification 1.1.1 — PH-11)
 **Status:** SELESAI — gerbang PH-01…PH-10 terpenuhi, siap STG-01
 
 ---
@@ -10,9 +10,9 @@
 | Plugin | Versi lama | Versi rilis | Alasan |
 |---|---|---|---|
 | LSP Core Management | 1.1.0-RC1 | **1.1.1** | perbaikan fallback SKKNI, menu Migrasi SKKNI, persyaratan global |
-| LSP Certification Management | 1.0.1 | **1.1.0** | PH-01…PH-09 (keamanan, capability, konkurensi, migrasi DB) |
+| LSP Certification Management | 1.0.1 | **1.1.1** | PH-01…PH-11 (keamanan, capability, konkurensi, migrasi DB, kelengkapan APL.02) |
 
-`LSP_CERT_DB_VERSION` tetap **1.0.0** — struktur tabel tidak berubah sejak PH-08, jadi migrasi tidak dijalankan ulang.
+`LSP_CERT_DB_VERSION` naik ke **1.1.0** (PH-11 menambah kolom `konfirmasi_bk` pada tabel pendaftaran).
 
 ---
 
@@ -21,7 +21,7 @@
 | Berkas | Ukuran | Berkas di dalam | SHA-256 |
 |---|---|---|---|
 | `lsp-core-management-1.1.1.zip` | 81 KB | 6 | `382533ff26a61736e35cf207198aced76982fabe29c3222b981107e4d9952c51` |
-| `lsp-certification-management-1.1.0.zip` | 120 KB | 39 | `c3a095c32335cbe7b7edf7a9b17243adda1765c17dbbe1953bf3b48c45e712fb` |
+| `lsp-certification-management-1.1.1.zip` | 124 KB | 39 | `15d621ce9b72e0d0d8d61bc6dbb36f09b1fd97e7cd6a0570fb0c104cf8673dd8` |
 
 Lokasi: `/home/muhadi/lsp-deploy-tools/dist/`
 
@@ -43,7 +43,7 @@ Skrip build memeriksa ulang hasilnya: **"bersih — tidak ada .git/docs/tests/zi
 
 | Pemeriksaan | Core 1.1.1 | Cert 1.1.0 |
 |---|---|---|
-| Header plugin terbaca | ✔ | ✔ |
+| Header plugin terbaca | ✔ | ✔ (1.1.1) |
 | Versi header = konstanta | ✔ | ✔ (sebelumnya dilaporkan tidak sinkron karena `LSP_CERT_DB_VERSION` — skrip preflight diperbaiki) |
 | Sintaks PHP bersih | ✔ 18 berkas | ✔ 66 berkas |
 | Fungsi berisiko di paket | ✔ tidak ada (hanya di `tests/`, dikeluarkan) | ✔ tidak ada |
@@ -68,7 +68,7 @@ Sisa peringatan preflight (`.git`, `tests/`, `docs/`, berkas belum di-commit) ha
 
 ## 6. Rollback
 
-- Simpan ZIP versi lama (`lsp-core-management-1.1.0-RC1.zip`, `lsp-certification-management-1.0.1.zip`)
+- Simpan ZIP versi lama (`lsp-core-management-1.1.0-RC1.zip`, `lsp-certification-management-1.0.1.zip`, `lsp-certification-management-1.1.0.zip`)
   yang masih ada di `dist/`.
 - Rollback = timpa folder plugin dengan isi ZIP lama, tanpa menyentuh tabel. Struktur tabel 1.1.0
   kompatibel dengan 1.0.1 (hanya penambahan kolom & indeks).

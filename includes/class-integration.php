@@ -379,6 +379,81 @@ class LSP_Cert_Integration {
     }
 
     /**
+     * Kelengkapan jawaban FR.APL.02 (asesmen mandiri) untuk satu pendaftaran.
+     *
+     * Dihitung terhadap Master SKKNI: setiap elemen wajib punya jawaban K atau BK.
+     * Jawaban yang tidak ada di master tidak dihitung (bukan bukti kelengkapan).
+     *
+     * @param int $pendaftaran_id
+     * @return array{total:int,terjawab:int,k:int,bk:int,kosong:array,lengkap:bool,terisi:bool,skema_id:int}
+     */
+    public static function get_apl02_kelengkapan( $pendaftaran_id ) {
+        $hasil = array(
+            'total'   => 0,
+            'terjawab' => 0,
+            'k'       => 0,
+            'bk'      => 0,
+            'kosong'  => array(),
+            'lengkap' => false,
+            'terisi'  => false,
+            'skema_id' => 0,
+        );
+
+        $pendaftaran = LSP_Cert_Database::get_pendaftaran( (int) $pendaftaran_id );
+        if ( ! $pendaftaran ) {
+            return $hasil;
+        }
+
+        $kegiatan = LSP_Cert_Database::get_kegiatan( $pendaftaran->kegiatan_id );
+        if ( ! $kegiatan ) {
+            return $hasil;
+        }
+
+        $hasil['skema_id'] = (int) $kegiatan->skema_id;
+
+        $tersimpan = array();
+        foreach ( LSP_Cert_Database::get_apl02_jawaban( (int) $pendaftaran_id ) as $row ) {
+            $nilai = strtoupper( trim( (string) $row->jawaban ) );
+            if ( in_array( $nilai, array( 'K', 'BK' ), true ) ) {
+                $tersimpan[ trim( (string) $row->unit_kompetensi_kode ) . '|' . (int) $row->elemen_nomor ] = $nilai;
+            }
+        }
+
+        foreach ( self::get_unit_kompetensi( $hasil['skema_id'] ) as $unit ) {
+            $kode = trim( (string) ( $unit['kode'] ?? '' ) );
+            if ( '' === $kode ) {
+                continue;
+            }
+
+            foreach ( (array) ( $unit['elemen'] ?? array() ) as $idx => $e ) {
+                $nomor = isset( $e['nomor'] ) ? (int) $e['nomor'] : ( $idx + 1 );
+                $hasil['total']++;
+
+                $kunci = $kode . '|' . $nomor;
+                if ( isset( $tersimpan[ $kunci ] ) ) {
+                    $hasil['terjawab']++;
+                    if ( 'BK' === $tersimpan[ $kunci ] ) {
+                        $hasil['bk']++;
+                    } else {
+                        $hasil['k']++;
+                    }
+                } else {
+                    $hasil['kosong'][] = array(
+                        'kode'  => $kode,
+                        'nomor' => $nomor,
+                        'nama'  => (string) ( $e['nama'] ?? '' ),
+                    );
+                }
+            }
+        }
+
+        $hasil['terisi']  = $hasil['terjawab'] > 0;
+        $hasil['lengkap'] = ( $hasil['total'] > 0 && $hasil['terjawab'] === $hasil['total'] );
+
+        return $hasil;
+    }
+
+    /**
      * Apakah asesor ditugaskan pada sebuah kegiatan.
      *
      * Kolom `asesor_ids` berisi JSON array ID asesor. Format lama (dipisah koma)
