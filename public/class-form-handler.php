@@ -16,7 +16,21 @@ class LSP_Cert_Form_Handler {
 
     public static function submit_pendaftaran() {
         check_ajax_referer( 'lsp_cert_public_nonce', 'nonce' );
-        
+
+        // Pembatas permintaan: maksimal 3 pengiriman per menit per alamat IP.
+        // Mencegah satu orang atau bot membanjiri pendaftaran dan menghabiskan kuota.
+        $client_ip = self::get_client_ip();
+        $rate_key  = 'lsp_cert_rl_daftar_' . md5( $client_ip );
+        $attempts  = (int) get_transient( $rate_key );
+
+        if ( $attempts >= 3 ) {
+            wp_send_json_error( array(
+                'message' => 'Terlalu banyak percobaan pendaftaran dari jaringan Anda. Silakan tunggu 1 menit, lalu coba lagi.',
+            ), 429 );
+        }
+        set_transient( $rate_key, $attempts + 1, MINUTE_IN_SECONDS );
+
+
         // Validate required fields
         $required_fields = array(
             'kegiatan_id', 'nama_lengkap', 'nik', 'tempat_lahir', 'tanggal_lahir',
@@ -45,6 +59,22 @@ class LSP_Cert_Form_Handler {
         $peserta_count = LSP_Cert_Database::get_peserta_count( $kegiatan_id );
         if ( $peserta_count >= $kegiatan->kuota ) {
             wp_send_json_error( array( 'message' => 'Kuota kegiatan sudah penuh' ) );
+        }
+
+        // Cegah pendaftaran ganda: NIK atau email yang sama pada kegiatan yang sama.
+        $nik_input   = sanitize_text_field( wp_unslash( $_POST['nik'] ) );
+        $email_input = sanitize_email( wp_unslash( $_POST['email'] ) );
+        $ganda       = LSP_Cert_Database::cek_pendaftar_ganda( $kegiatan_id, $nik_input, $email_input );
+
+        if ( 'nik' === $ganda ) {
+            wp_send_json_error( array(
+                'message' => 'NIK ini sudah terdaftar pada kegiatan ini. Silakan hubungi admin bila ingin memperbaiki data.',
+            ), 409 );
+        }
+        if ( 'email' === $ganda ) {
+            wp_send_json_error( array(
+                'message' => 'Email ini sudah dipakai untuk mendaftar pada kegiatan ini. Silakan hubungi admin bila ingin memperbaiki data.',
+            ), 409 );
         }
         
         // Prepare data
@@ -112,5 +142,18 @@ class LSP_Cert_Form_Handler {
             'message' => 'Pendaftaran berhasil disimpan',
             'pendaftaran_id' => $pendaftaran_id,
         ));
+    }
+
+    /**
+     * Alamat IP pengunjung yang aman dipakai sebagai kunci pembatas permintaan.
+     *
+     * @return string
+     */
+    private static function get_client_ip() {
+        $ip = isset( $_SERVER['REMOTE_ADDR'] ) ? trim( (string) $_SERVER['REMOTE_ADDR'] ) : '';
+        if ( filter_var( $ip, FILTER_VALIDATE_IP ) ) {
+            return $ip;
+        }
+        return '127.0.0.1';
     }
 }

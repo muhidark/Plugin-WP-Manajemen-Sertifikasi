@@ -118,6 +118,47 @@ class LSP_Cert_Database {
         ));
     }
 
+    /**
+     * Cek pendaftaran ganda pada satu kegiatan.
+     *
+     * @param int    $kegiatan_id ID kegiatan.
+     * @param string $nik         NIK peserta.
+     * @param string $email       Email peserta.
+     * @return string 'nik', 'email', atau '' kalau belum pernah mendaftar.
+     */
+    public static function cek_pendaftar_ganda( $kegiatan_id, $nik, $email ) {
+        global $wpdb;
+        $table = $wpdb->prefix . 'lsp_pendaftaran';
+
+        $kegiatan_id = (int) $kegiatan_id;
+        $nik         = trim( (string) $nik );
+        $email       = trim( (string) $email );
+
+        if ( '' !== $nik ) {
+            $ada_nik = $wpdb->get_var( $wpdb->prepare(
+                "SELECT id FROM $table WHERE kegiatan_id = %d AND nik = %s LIMIT 1",
+                $kegiatan_id,
+                $nik
+            ) );
+            if ( $ada_nik ) {
+                return 'nik';
+            }
+        }
+
+        if ( '' !== $email ) {
+            $ada_email = $wpdb->get_var( $wpdb->prepare(
+                "SELECT id FROM $table WHERE kegiatan_id = %d AND email = %s LIMIT 1",
+                $kegiatan_id,
+                $email
+            ) );
+            if ( $ada_email ) {
+                return 'email';
+            }
+        }
+
+        return '';
+    }
+
     // ============ PENDAFTARAN ============
 
     public static function get_pendaftaran( $id ) {
