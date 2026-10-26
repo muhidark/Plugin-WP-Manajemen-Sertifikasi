@@ -41,7 +41,7 @@
                 <th>Core Management</th>
                 <td>
                     <?php 
-                    if ( is_plugin_active( 'lsp-core-management/lsp-core-management.php' ) ) {
+                    if ( function_exists( 'lsp_cert_core_available' ) && lsp_cert_core_available() ) {
                         echo '<span style="color:green;">✓ Aktif</span>';
                     } else {
                         echo '<span style="color:red;">✗ Tidak Aktif</span>';
