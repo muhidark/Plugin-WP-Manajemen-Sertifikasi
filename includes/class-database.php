@@ -14,30 +14,15 @@ class LSP_Cert_Database {
     }
 
     /**
-     * Migrasi database yang aman & idempoten untuk menambah kolom baru jika belum ada
+     * Migrasi skema database.
+     *
+     * Seluruh pemeriksaan skema dipindahkan ke LSP_Cert_Migrations agar tidak
+     * dijalankan pada setiap request (cukup satu pembacaan opsi versi).
      */
     public static function maybe_upgrade_database() {
-        global $wpdb;
-        $table_kegiatan = $wpdb->prefix . 'lsp_kegiatan';
-
-        // Pastikan tabel sudah terbentuk sebelum alter
-        if ( $wpdb->get_var( "SHOW TABLES LIKE '$table_kegiatan'" ) !== $table_kegiatan ) {
-            return;
+        if ( class_exists( 'LSP_Cert_Migrations' ) ) {
+            LSP_Cert_Migrations::maybe_migrate();
         }
-
-        // Cek kolom lokasi_uji
-        $col_lokasi = $wpdb->get_results( "SHOW COLUMNS FROM `$table_kegiatan` LIKE 'lokasi_uji'" );
-        if ( empty( $col_lokasi ) ) {
-            $wpdb->query( "ALTER TABLE `$table_kegiatan` ADD COLUMN `lokasi_uji` varchar(255) DEFAULT NULL AFTER `tuk_id`" );
-        }
-
-        // Cek kolom alamat_lokasi_uji
-        $col_alamat = $wpdb->get_results( "SHOW COLUMNS FROM `$table_kegiatan` LIKE 'alamat_lokasi_uji'" );
-        if ( empty( $col_alamat ) ) {
-            $wpdb->query( "ALTER TABLE `$table_kegiatan` ADD COLUMN `alamat_lokasi_uji` text DEFAULT NULL AFTER `lokasi_uji`" );
-        }
-
-        self::ensure_unique_indexes();
     }
 
     /**
@@ -46,11 +31,11 @@ class LSP_Cert_Database {
      * Pengaman terakhir di level database: dua request paralel dengan NIK/email sama
      * tidak bisa sama-sama tersimpan, walaupun lock aplikasi dilewati.
      */
-    public static function ensure_unique_indexes() {
+    public static function ensure_unique_indexes( $force = false ) {
         global $wpdb;
 
         // Cukup sekali per versi; ALTER + SHOW INDEX tidak perlu dijalankan tiap request.
-        if ( '1' === get_option( 'lsp_cert_index_version' ) ) {
+        if ( ! $force && '1' === get_option( 'lsp_cert_index_version' ) ) {
             return;
         }
 

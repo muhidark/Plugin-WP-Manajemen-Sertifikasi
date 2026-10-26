@@ -15,10 +15,41 @@ class LSP_Cert_Activator {
 
     public static function activate() {
         self::create_tables();
+        self::upgrade_columns();
         self::set_default_options();
+
+        // Terapkan migrasi & catat versi skema.
+        require_once LSP_CERT_PLUGIN_DIR . 'includes/class-migrations.php';
+        LSP_Cert_Migrations::run();
+        update_option( LSP_Cert_Migrations::OPTION, LSP_Cert_Migrations::target() );
     }
 
-    private static function create_tables() {
+    /**
+     * Kolom tambahan yang pernah ditambahkan setelah rilis awal.
+     *
+     * Idempoten: hanya menambah bila kolom belum ada.
+     */
+    public static function upgrade_columns() {
+        global $wpdb;
+
+        $table = $wpdb->prefix . 'lsp_kegiatan';
+
+        if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) ) !== $table ) {
+            return;
+        }
+
+        $col_lokasi = $wpdb->get_results( "SHOW COLUMNS FROM `$table` LIKE 'lokasi_uji'" );
+        if ( empty( $col_lokasi ) ) {
+            $wpdb->query( "ALTER TABLE `$table` ADD COLUMN `lokasi_uji` varchar(255) DEFAULT NULL AFTER `tuk_id`" );
+        }
+
+        $col_alamat = $wpdb->get_results( "SHOW COLUMNS FROM `$table` LIKE 'alamat_lokasi_uji'" );
+        if ( empty( $col_alamat ) ) {
+            $wpdb->query( "ALTER TABLE `$table` ADD COLUMN `alamat_lokasi_uji` text DEFAULT NULL AFTER `lokasi_uji`" );
+        }
+    }
+
+    public static function create_tables() {
         global $wpdb;
         $charset_collate = $wpdb->get_charset_collate();
 

@@ -19,6 +19,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 // Define plugin constants
 define( 'LSP_CERT_VERSION', '1.0.1' );
+
+// Versi skema database. Naikkan setiap kali struktur tabel/kolom/indeks berubah,
+// agar migrasi di includes/class-migrations.php dijalankan sekali.
+define( 'LSP_CERT_DB_VERSION', '1.0.0' );
 define( 'LSP_CERT_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'LSP_CERT_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'LSP_CERT_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
@@ -80,6 +84,7 @@ function lsp_cert_init() {
     // Load includes
     require_once LSP_CERT_PLUGIN_DIR . 'includes/class-activator.php';
     require_once LSP_CERT_PLUGIN_DIR . 'includes/class-capabilities.php';
+    require_once LSP_CERT_PLUGIN_DIR . 'includes/class-migrations.php';
     require_once LSP_CERT_PLUGIN_DIR . 'includes/class-database.php';
     require_once LSP_CERT_PLUGIN_DIR . 'includes/class-integration.php';
     require_once LSP_CERT_PLUGIN_DIR . 'includes/class-ia02.php';
@@ -104,6 +109,7 @@ function lsp_cert_init() {
     
     // Initialize classes
     LSP_Cert_Capabilities::init();
+    LSP_Cert_Migrations::maybe_migrate();
     LSP_Cert_Activator::init();
     LSP_Cert_Database::init();
     LSP_Cert_Integration::init();
