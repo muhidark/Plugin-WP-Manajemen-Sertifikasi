@@ -48,12 +48,25 @@ class LSP_Cert_Form_Handler {
             wp_send_json_error( array( 'message' => 'Format email tidak valid' ) );
         }
         
-        // Check kuota
+        // Check kuota & validasi kegiatan
         $kegiatan_id = intval( $_POST['kegiatan_id'] );
         $kegiatan = LSP_Cert_Database::get_kegiatan( $kegiatan_id );
         
         if ( ! $kegiatan ) {
             wp_send_json_error( array( 'message' => 'Kegiatan tidak ditemukan' ) );
+        }
+
+        // Aturan pendaftaran ditegakkan di server, bukan hanya di tampilan:
+        // status kegiatan, tanggal pelaksanaan, dan keabsahan skema.
+        $masalah_kegiatan = self::validasi_kegiatan( $kegiatan );
+        if ( '' !== $masalah_kegiatan ) {
+            wp_send_json_error( array( 'message' => $masalah_kegiatan ), 409 );
+        }
+
+        // Validasi format identitas (server-side, tidak bergantung atribut HTML).
+        $masalah_identitas = self::validasi_identitas( $_POST );
+        if ( '' !== $masalah_identitas ) {
+            wp_send_json_error( array( 'message' => $masalah_identitas ) );
         }
         
         $peserta_count = LSP_Cert_Database::get_peserta_count( $kegiatan_id );
@@ -142,6 +155,84 @@ class LSP_Cert_Form_Handler {
             'message' => 'Pendaftaran berhasil disimpan',
             'pendaftaran_id' => $pendaftaran_id,
         ));
+    }
+
+    /**
+     * Validasi aturan kegiatan sebelum pendaftaran disimpan.
+     *
+     * Aturan ini sebelumnya hanya diterapkan di tampilan (kegiatan yang dibuka saja
+     * yang ditampilkan), sehingga request langsung dapat melewatinya.
+     *
+     * @param object $kegiatan
+     * @return string Pesan masalah, atau '' bila lolos.
+     */
+    private static function validasi_kegiatan( $kegiatan ) {
+        $status = isset( $kegiatan->status ) ? (string) $kegiatan->status : '';
+        if ( 'dibuka' !== $status ) {
+            return 'Kegiatan ini belum dibuka atau sudah ditutup untuk pendaftaran.';
+        }
+
+        $hari_ini   = current_time( 'Y-m-d' );
+        $pelaksanaan = isset( $kegiatan->tanggal_pelaksanaan ) ? (string) $kegiatan->tanggal_pelaksanaan : '';
+        if ( '' === $pelaksanaan || $pelaksanaan < $hari_ini ) {
+            return 'Tanggal pelaksanaan kegiatan ini sudah lewat. Silakan pilih jadwal lain.';
+        }
+
+        $skema_id = isset( $kegiatan->skema_id ) ? (int) $kegiatan->skema_id : 0;
+        if ( ! $skema_id || empty( LSP_Cert_Integration::get_skema( $skema_id ) ) ) {
+            return 'Skema sertifikasi pada kegiatan ini tidak valid. Silakan hubungi admin LSP.';
+        }
+
+        return '';
+    }
+
+    /**
+     * Validasi format data identitas pendaftar.
+     *
+     * @param array $post Data POST mentah.
+     * @return string Pesan masalah, atau '' bila lolos.
+     */
+    private static function validasi_identitas( $post ) {
+        $nik = preg_replace( '/\s+/', '', (string) ( $post['nik'] ?? '' ) );
+        if ( ! preg_match( '/^\d{16}$/', $nik ) ) {
+            return 'NIK harus terdiri dari 16 angka.';
+        }
+
+        $telepon = preg_replace( '/[^0-9]/', '', (string) ( $post['telepon'] ?? '' ) );
+        if ( strlen( $telepon ) < 8 || strlen( $telepon ) > 15 ) {
+            return 'Nomor telepon harus 8–15 angka.';
+        }
+
+        $kode_pos = preg_replace( '/\s+/', '', (string) ( $post['kode_pos'] ?? '' ) );
+        if ( ! preg_match( '/^\d{5}$/', $kode_pos ) ) {
+            return 'Kode pos harus 5 angka.';
+        }
+
+        $lahir_raw = (string) ( $post['tanggal_lahir'] ?? '' );
+        $lahir     = \DateTime::createFromFormat( 'Y-m-d', $lahir_raw );
+        if ( ! $lahir || $lahir->format( 'Y-m-d' ) !== $lahir_raw ) {
+            return 'Tanggal lahir harus berformat YYYY-MM-DD.';
+        }
+        $hari_ini = new \DateTime( current_time( 'Y-m-d' ) );
+        if ( $lahir > $hari_ini ) {
+            return 'Tanggal lahir tidak boleh di masa depan.';
+        }
+        $umur = (int) $lahir->diff( $hari_ini )->y;
+        if ( $umur < 15 ) {
+            return 'Usia pendaftar minimal 15 tahun.';
+        }
+
+        $jk = (string) ( $post['jenis_kelamin'] ?? '' );
+        if ( ! in_array( $jk, array( 'Laki-laki', 'Perempuan' ), true ) ) {
+            return 'Jenis kelamin harus dipilih: Laki-laki atau Perempuan.';
+        }
+
+        $tujuan = (string) ( $post['tujuan_asesmen'] ?? 'sertifikasi' );
+        if ( ! in_array( $tujuan, array( 'sertifikasi', 'sertifikasi_ulang', 'pkt', 'rpl', 'lainnya' ), true ) ) {
+            return 'Tujuan asesmen tidak valid.';
+        }
+
+        return '';
     }
 
     /**
