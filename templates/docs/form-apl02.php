@@ -89,7 +89,8 @@ $tanggal_ttd_apl02 = ! empty( $pendaftaran->created_at ) ? date_i18n( 'd F Y', s
                         $e_nomor = $el['nomor'] ?? ($e_idx + 1);
                         $e_nama = $el['nama'] ?? '';
                         $kuks = $el['kuk'] ?? array();
-                        $ans = $jawaban_map[ $u_kode ][ (int) $e_nomor ] ?? 'K';
+                        // Tidak ada jawaban tersimpan → biarkan kosong (☐), jangan diasumsikan Kompeten.
+                        $ans = $jawaban_map[ $u_kode ][ (int) $e_nomor ] ?? '';
                     ?>
                         <tr>
                             <td colspan="3" valign="top" style="padding: 6px 10px; font-size: 11.5px; line-height: 1.4;">

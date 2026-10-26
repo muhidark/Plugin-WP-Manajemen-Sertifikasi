@@ -124,37 +124,111 @@ class LSP_Cert_Form_Handler {
             wp_send_json_error( array( 'message' => 'Gagal menyimpan data pendaftaran' ) );
         }
         
-        // Save APL 02 answers (supports both apl02 structured array and legacy apl02_jawaban)
+        // Save APL 02 answers — struktur dibangun ulang dari Master SKKNI.
+        //
+        // Browser hanya boleh menentukan pilihan K/BK beserta kode unit & nomor elemen.
+        // Judul unit dan nama elemen SELALU diambil dari master, sehingga manipulasi
+        // hidden field tidak bisa mengubah isi dokumen resmi.
+        $apl02_input = array();
         if ( isset( $_POST['apl02'] ) && is_array( $_POST['apl02'] ) ) {
-            foreach ( $_POST['apl02'] as $item ) {
-                if ( ! empty( $item['jawaban'] ) ) {
-                    LSP_Cert_Database::insert_apl02_jawaban( array(
-                        'pendaftaran_id' => $pendaftaran_id,
-                        'unit_kompetensi_kode' => sanitize_text_field( $item['kode'] ?? '' ),
-                        'unit_kompetensi_judul' => sanitize_text_field( $item['judul'] ?? '' ),
-                        'elemen_nomor' => intval( $item['elemen_nomor'] ?? 1 ),
-                        'elemen_nama' => sanitize_text_field( $item['elemen_nama'] ?? '' ),
-                        'jawaban' => sanitize_text_field( $item['jawaban'] ),
-                    ));
-                }
-            }
+            $apl02_input = $_POST['apl02'];
         } elseif ( isset( $_POST['apl02_jawaban'] ) && is_array( $_POST['apl02_jawaban'] ) ) {
-            foreach ( $_POST['apl02_jawaban'] as $jawaban ) {
-                LSP_Cert_Database::insert_apl02_jawaban( array(
-                    'pendaftaran_id' => $pendaftaran_id,
-                    'unit_kompetensi_kode' => sanitize_text_field( $jawaban['kode'] ?? '' ),
-                    'unit_kompetensi_judul' => sanitize_text_field( $jawaban['judul'] ?? '' ),
-                    'elemen_nomor' => intval( $jawaban['elemen_nomor'] ?? 1 ),
-                    'elemen_nama' => sanitize_text_field( $jawaban['elemen_nama'] ?? '' ),
-                    'jawaban' => sanitize_text_field( $jawaban['jawaban'] ?? 'K' ),
-                ));
+            $apl02_input = $_POST['apl02_jawaban'];
+        }
+
+        $apl02_diabaikan = 0;
+        if ( ! empty( $apl02_input ) ) {
+            $susun = self::susun_jawaban_apl02( (int) $kegiatan->skema_id, $apl02_input );
+            $apl02_diabaikan = $susun['diabaikan'];
+
+            foreach ( $susun['jawaban'] as $row ) {
+                $row['pendaftaran_id'] = $pendaftaran_id;
+                LSP_Cert_Database::insert_apl02_jawaban( $row );
             }
         }
         
         wp_send_json_success( array(
             'message' => 'Pendaftaran berhasil disimpan',
             'pendaftaran_id' => $pendaftaran_id,
+            'apl02_tersimpan' => isset( $susun['jawaban'] ) ? count( $susun['jawaban'] ) : 0,
+            'apl02_diabaikan' => $apl02_diabaikan,
         ));
+    }
+
+    /**
+     * Bangun ulang jawaban APL.02 dari Master SKKNI.
+     *
+     * Browser hanya boleh mengirim kode unit, nomor elemen, dan pilihan K/BK.
+     * Judul unit dan nama elemen tidak pernah diambil dari request; bila kode unit
+     * atau nomor elemen tidak ada di master, entri tersebut diabaikan.
+     *
+     * @param int   $skema_id
+     * @param array $input Data mentah dari request.
+     * @return array{jawaban:array,diabaikan:int}
+     */
+    private static function susun_jawaban_apl02( $skema_id, $input ) {
+        $units = LSP_Cert_Integration::get_unit_kompetensi( (int) $skema_id );
+        $hasil = array();
+        $diabaikan = 0;
+
+        if ( empty( $units ) || ! is_array( $units ) ) {
+            return array( 'jawaban' => array(), 'diabaikan' => is_array( $input ) ? count( $input ) : 0 );
+        }
+
+        // Peta master: kode unit → judul + daftar elemen (nomor → nama).
+        $peta = array();
+        foreach ( $units as $u ) {
+            $kode = trim( (string) ( $u['kode'] ?? '' ) );
+            if ( '' === $kode ) {
+                continue;
+            }
+            $peta[ $kode ] = array(
+                'judul'  => (string) ( $u['judul'] ?? '' ),
+                'elemen' => array(),
+            );
+            foreach ( (array) ( $u['elemen'] ?? array() ) as $idx => $e ) {
+                $nomor = isset( $e['nomor'] ) ? (int) $e['nomor'] : ( $idx + 1 );
+                $peta[ $kode ]['elemen'][ $nomor ] = (string) ( $e['nama'] ?? '' );
+            }
+        }
+
+        $terpakai = array();
+
+        foreach ( (array) $input as $item ) {
+            if ( ! is_array( $item ) ) {
+                $diabaikan++;
+                continue;
+            }
+
+            $kode = trim( (string) ( $item['kode'] ?? '' ) );
+            if ( '' === $kode || ! isset( $peta[ $kode ] ) ) {
+                $diabaikan++;
+                continue;
+            }
+
+            $nomor = (int) ( $item['elemen_nomor'] ?? 0 );
+            if ( ! isset( $peta[ $kode ]['elemen'][ $nomor ] ) ) {
+                $diabaikan++;
+                continue;
+            }
+
+            $jawaban = strtoupper( trim( (string) ( $item['jawaban'] ?? '' ) ) );
+            if ( ! in_array( $jawaban, array( 'K', 'BK' ), true ) ) {
+                $diabaikan++;
+                continue;
+            }
+
+            $kunci = $kode . '#' . $nomor;
+            $terpakai[ $kunci ] = array(
+                'unit_kompetensi_kode'  => $kode,
+                'unit_kompetensi_judul' => $peta[ $kode ]['judul'],
+                'elemen_nomor'          => $nomor,
+                'elemen_nama'           => $peta[ $kode ]['elemen'][ $nomor ],
+                'jawaban'               => $jawaban,
+            );
+        }
+
+        return array( 'jawaban' => array_values( $terpakai ), 'diabaikan' => $diabaikan );
     }
 
     /**
