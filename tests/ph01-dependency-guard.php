@@ -63,7 +63,7 @@ check( 'C1 check_dependencies = false', lsp_cert_check_dependencies(), false );
 
 // --- C2: Core tersedia ------------------------------------------------------
 if ( ! class_exists( 'LSP_Core_Management' ) ) {
-    eval( 'class LSP_Core_Management { public static function get_skema_skkni_data( $id ) { return array(); } }' );
+    require __DIR__ . '/fixtures/lsp-core-management-stub.php';
 }
 check( 'C2 helper = true', lsp_cert_core_available(), true );
 check( 'C2 check_dependencies = true', lsp_cert_check_dependencies(), true );
