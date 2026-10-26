@@ -1,7 +1,11 @@
 # STG-02 — Manual Print Acceptance (checklist)
 
-**Status:** menunggu pengujian manual oleh pengguna
+**Status:** **LULUS** — dinyatakan oleh pengguna pada 27 Oktober 2026
 **Data uji:** kegiatan #76, peserta #88, asesor #55 (dari STG-01)
+
+> Catatan kejujuran: penilaian dilakukan manual oleh pengguna di browser. Lembar checklist
+> per-dokumen tidak diisi baris demi baris; yang dicatat di sini adalah pernyataan hasil
+> ("hasil cetak sudah OK"), bukan rekonstruksi nilai per butir.
 
 Berkas siap cetak:
 
@@ -27,6 +31,21 @@ TIDAK LULUS), kolom tanda tangan penguji.
 3. Untuk tiap dokumen: tekan Cetak → periksa pratinjau/cetak → isi checklist.
 4. MAPA.02 dicetak dari **LSP Certification → Jadwal** (per kegiatan), bukan per peserta.
 5. Setelah selesai: putuskan LULUS/TIDAK, lalu data uji (#76/#88) boleh dihapus.
+
+## Hasil
+
+Pengguna memeriksa hasil cetak dan menyatakan **OK** pada 27 Oktober 2026. Tidak ada temuan cetak
+yang dilaporkan.
+
+Temuan putaran sebelumnya — FR.APL.02 tercetak dengan seluruh kolom K/BK kosong — sudah diperbaiki
+pada **PH-11** dan diverifikasi ulang sebelum pemeriksaan ini, sehingga yang diperiksa pengguna
+adalah dokumen dengan kolom terisi.
+
+## Tindak lanjut
+
+1. Hapus data uji (#76/#88/#55) sebelum kegiatan nyata dimulai.
+2. Lanjut **REL-01** — freeze kode, paket produksi final, checksum.
+3. Lanjut **PROD-01** — deployment ke `lspkomunikasi.id` setelah backup.
 
 ## Hasil yang diharapkan bila lulus
 
