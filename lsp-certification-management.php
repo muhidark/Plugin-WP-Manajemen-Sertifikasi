@@ -3,7 +3,7 @@
  * Plugin Name: LSP Certification Management
  * Plugin URI:  https://lspkomunikasi.id/
  * Description: Plugin untuk manajemen proses sertifikasi kompetensi: pendaftaran, APL 01, APL 02, verifikasi admin, penugasan asesor, dan pencetakan dokumen.
- * Version:     1.1.1
+ * Version:     1.1.2
  * Requires at least: 5.8
  * Requires PHP: 7.4
  * Author:      Muhadi Ganteng
@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Define plugin constants
-define( 'LSP_CERT_VERSION', '1.1.1' );
+define( 'LSP_CERT_VERSION', '1.1.2' );
 
 // Versi skema database. Naikkan setiap kali struktur tabel/kolom/indeks berubah,
 // agar migrasi di includes/class-migrations.php dijalankan sekali.

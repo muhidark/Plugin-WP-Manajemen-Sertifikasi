@@ -365,10 +365,10 @@ class LSP_Cert_Document_Printer {
             }
         }
 
-        // Ambil Paket MUK (Multi-Versi Bundling) jika ada, fallback ke default skema
-        $paket_muk_id = ! empty( $pendaftaran->paket_muk_id ) 
-            ? (int) $pendaftaran->paket_muk_id 
-            : ( ! empty( $kegiatan->paket_muk_id ) ? (int) $kegiatan->paket_muk_id : 0 );
+        // Ambil Paket MUK level KEGIATAN (Multi-Versi Bundling) jika ada,
+        // fallback ke default skema. Dokumen kegiatan tidak punya konteks peserta,
+        // sehingga `$pendaftaran` tidak boleh dipakai sebagai sumber di sini.
+        $paket_muk_id = ! empty( $kegiatan->paket_muk_id ) ? (int) $kegiatan->paket_muk_id : 0;
         $paket_muk    = null;
         if ( class_exists( 'LSP_Cert_Paket_MUK' ) ) {
             if ( $paket_muk_id ) {

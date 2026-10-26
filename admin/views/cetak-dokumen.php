@@ -358,7 +358,7 @@ if ( ! defined( 'ABSPATH' ) ) {
                 ?>
                     <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px; padding: 10px 14px; margin-bottom: 16px; font-size: 13px; color: #1e40af;">
                         👤 <strong>Dicetak Terhubung Dengan Asesi:</strong> <?php echo esc_html( $selected_pendaftaran->nama_lengkap ); ?> 
-                        &bull; <strong>Asesor:</strong> <?php echo esc_html( $asesor_mapa['name'] ?? 'Masriah Hebat' ); ?>
+                        &bull; <strong>Asesor:</strong> <?php echo esc_html( ! empty( $asesor_mapa['name'] ) ? $asesor_mapa['name'] : 'Belum ditentukan' ); ?>
                     </div>
                 <?php endif; ?>
 
@@ -474,7 +474,7 @@ if ( ! defined( 'ABSPATH' ) ) {
             ?>
                 <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px; padding: 10px 14px; margin-bottom: 16px; font-size: 13px; color: #1e40af;">
                     👤 <strong>Dicetak Terhubung Dengan Asesi:</strong> <?php echo esc_html( $selected_pendaftaran->nama_lengkap ); ?> 
-                    &bull; <strong>Asesor:</strong> <?php echo esc_html( $asesor_mapa2['name'] ?? 'Masriah Hebat' ); ?>
+                    &bull; <strong>Asesor:</strong> <?php echo esc_html( ! empty( $asesor_mapa2['name'] ) ? $asesor_mapa2['name'] : 'Belum ditentukan' ); ?>
                 </div>
             <?php endif; ?>
 

@@ -4,7 +4,7 @@ Tags: lsp, sertifikasi, kompetensi, bns
 Requires at least: 5.8
 Tested up to: 6.4
 Requires PHP: 7.4
-Stable tag: 1.1.1
+Stable tag: 1.1.2
 License: GPLv2 or later
 
 Plugin untuk manajemen proses sertifikasi kompetensi LSP Komunikasi Indonesia.
@@ -45,6 +45,12 @@ Plugin ini mengelola proses sertifikasi kompetensi dari pendaftaran hingga pence
 3. Atau gunakan shortcode `[lsp_sertifikasi_form kegiatan_id="X"]` untuk form langsung
 
 == Changelog ==
+
+= 1.1.2 =
+* Perbaikan: nama asesor contoh pada tampilan admin Cetak Dokumen
+  (FR.MAPA.01 & FR.MAPA.02) diganti netral — "Belum ditentukan" bila asesor belum ditetapkan
+* Perbaikan: dokumen tingkat kegiatan (FR.MAPA.02) mengambil Paket MUK dari kegiatan saja;
+  sebelumnya membaca `$pendaftaran->paket_muk_id` yang tidak berlaku pada konteks tersebut
 
 = 1.1.1 =
 * Perbaikan: FR.APL.02 wajib diisi lengkap — kiriman sebagian ditolak, pendaftaran tidak bisa
