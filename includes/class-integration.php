@@ -379,6 +379,35 @@ class LSP_Cert_Integration {
     }
 
     /**
+     * Apakah asesor ditugaskan pada sebuah kegiatan.
+     *
+     * Kolom `asesor_ids` berisi JSON array ID asesor. Format lama (dipisah koma)
+     * tetap dibaca agar data lama tidak kehilangan akses.
+     *
+     * @param int    $user_id
+     * @param object $kegiatan
+     * @return bool
+     */
+    public static function asesor_bertugas_di_kegiatan( $user_id, $kegiatan ) {
+        $user_id = (int) $user_id;
+
+        if ( ! $user_id || empty( $kegiatan ) || empty( $kegiatan->asesor_ids ) ) {
+            return false;
+        }
+
+        $mentah = (string) $kegiatan->asesor_ids;
+        $ids    = json_decode( $mentah, true );
+
+        if ( ! is_array( $ids ) ) {
+            $ids = preg_split( '/[,\s]+/', $mentah );
+        }
+
+        $ids = array_filter( array_map( 'intval', (array) $ids ) );
+
+        return in_array( $user_id, $ids, true );
+    }
+
+    /**
      * Periksa apakah user ID tertentu memiliki role asesor
      *
      * @param int|null $user_id

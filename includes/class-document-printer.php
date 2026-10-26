@@ -217,10 +217,22 @@ class LSP_Cert_Document_Printer {
             wp_die( 'Data pendaftaran tidak ditemukan.', 'Data Tidak Ditemukan', array( 'response' => 404 ) );
         }
 
-        // Isolasi data peserta: asesor non-admin hanya boleh peserta yang ditugaskan kepadanya.
+        // Isolasi data peserta (fail-closed):
+        //   - bila peserta sudah punya asesor, HANYA asesor itu (atau admin) yang boleh;
+        //   - bila belum punya asesor, asesor harus ditugaskan pada kegiatannya.
         if ( ! current_user_can( 'manage_options' ) && LSP_Cert_Integration::is_asesor( get_current_user_id() ) ) {
-            $current_user_id = get_current_user_id();
-            if ( ! empty( $pendaftaran->asesor_id ) && (int) $pendaftaran->asesor_id !== $current_user_id ) {
+            $current_user_id = (int) get_current_user_id();
+
+            if ( ! empty( $pendaftaran->asesor_id ) ) {
+                $ditugaskan = ( (int) $pendaftaran->asesor_id === $current_user_id );
+            } else {
+                $kegiatan_peserta = LSP_Cert_Database::get_kegiatan( $pendaftaran->kegiatan_id );
+                $ditugaskan       = $kegiatan_peserta
+                    ? LSP_Cert_Integration::asesor_bertugas_di_kegiatan( $current_user_id, $kegiatan_peserta )
+                    : false;
+            }
+
+            if ( ! $ditugaskan ) {
                 wp_die( 'Anda tidak memiliki hak akses untuk mencetak dokumen peserta ini.', 'Akses Ditolak', array( 'response' => 403 ) );
             }
         }
@@ -343,6 +355,13 @@ class LSP_Cert_Document_Printer {
         $skema = LSP_Cert_Integration::get_skema( $kegiatan->skema_id );
         if ( ! $skema ) {
             wp_die( 'Data Master Skema tidak ditemukan atau belum lengkap untuk kegiatan sertifikasi ini.', 'Master Skema Tidak Ditemukan', array( 'response' => 404 ) );
+        }
+
+        // Isolasi kegiatan: asesor non-admin hanya boleh kegiatan yang ditugaskan kepadanya.
+        if ( ! current_user_can( 'manage_options' ) && LSP_Cert_Integration::is_asesor( get_current_user_id() ) ) {
+            if ( ! LSP_Cert_Integration::asesor_bertugas_di_kegiatan( get_current_user_id(), $kegiatan ) ) {
+                wp_die( 'Anda tidak memiliki hak akses untuk mencetak dokumen kegiatan ini.', 'Akses Ditolak', array( 'response' => 403 ) );
+            }
         }
 
         // Ambil Paket MUK (Multi-Versi Bundling) jika ada, fallback ke default skema

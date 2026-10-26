@@ -334,6 +334,12 @@ class LSP_Cert_Paket_MUK {
 
     public static function ajax_get_paket_by_skema() {
         check_ajax_referer( 'lsp_cert_nonce', 'nonce' );
+
+        // Data paket hanya untuk pengelola instrumen; mencegah enumerasi oleh akun lain.
+        if ( ! current_user_can( 'lsp_cert_manage_instruments' ) ) {
+            wp_send_json_error( array( 'message' => 'Anda tidak memiliki hak akses.' ), 403 );
+        }
+
         $skema_id = intval( $_REQUEST['skema_id'] ?? 0 );
         if ( ! $skema_id ) {
             wp_send_json_error( 'ID Skema tidak valid' );
