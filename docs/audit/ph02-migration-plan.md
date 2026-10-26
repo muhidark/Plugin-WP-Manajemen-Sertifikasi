@@ -45,7 +45,15 @@ Halaman ini bisa dibuka **sebelum** memperbarui apa pun, karena hanya membaca da
 
 ### b. Import Elemen & KUK (massal, tanpa builder)
 
-Tempel teks SKKNI langsung, satu skema sekali import:
+**Berkas JSON dari SKKNI Extractor bisa diunggah langsung.** Halaman ini menerima:
+
+- berkas `.json` hasil `app/lsp_exporter.py` (`unit_ke_lsp_dict()`): satu unit, array unit, atau
+  `skema_ke_lsp_data()` untuk seluruh skema sekaligus;
+- bentuk mentah hasil ekstraksi (`elemen_kompetensi`, `nomor_elemen`, `nama_elemen`, KUK objek
+  `{nomor_kuk, uraian_kuk}`) — alias ditangani otomatis;
+- berkas `.txt` berformat baris, atau tempel teks/JSON langsung di kotak isian.
+
+Selain itu, tempel data SKKNI juga bisa lewat teks baris, satu skema sekali import:
 
 ```
 UNIT: J.63OPR00.004.2 | Menggunakan Perangkat Lunak Pengolah Kata Tingkat Dasar
