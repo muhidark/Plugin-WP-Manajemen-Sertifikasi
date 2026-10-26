@@ -1,0 +1,29 @@
+# Arsip build — jangan masuk repo
+*.zip
+*.tar.gz
+*.tgz
+*.tar
+*.rar
+
+# Log & cadangan
+*.log
+*.bak
+*.orig
+*.sql
+debug.log
+
+# Sampah OS & editor
+.DS_Store
+Thumbs.db
+*.swp
+*~
+.idea/
+.vscode/
+
+# Dependensi (kalau nanti ada)
+node_modules/
+vendor/
+
+# Berkas lokal
+.env
+.env.local

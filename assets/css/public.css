@@ -1,0 +1,264 @@
+/* Public Styles */
+
+.lsp-kegiatan-list {
+    margin: 20px 0;
+}
+
+.lsp-kegiatan-list h2 {
+    margin-bottom: 20px;
+}
+
+.lsp-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+}
+
+.lsp-table th,
+.lsp-table td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+.lsp-table th {
+    background: #f5f5f5;
+    font-weight: 600;
+}
+
+.lsp-table tr:hover {
+    background: #f9f9f9;
+}
+
+.lsp-button {
+    display: inline-block;
+    padding: 8px 16px;
+    background: #0073aa;
+    color: #fff;
+    text-decoration: none;
+    border-radius: 3px;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.lsp-button:hover {
+    background: #005177;
+    color: #fff;
+}
+
+.lsp-button-primary {
+    background: #46b450;
+}
+
+.lsp-button-primary:hover {
+    background: #3a9a42;
+}
+
+.lsp-disabled {
+    display: inline-block;
+    padding: 8px 16px;
+    background: #ccc;
+    color: #666;
+    border-radius: 3px;
+    cursor: not-allowed;
+}
+
+.lsp-notice {
+    padding: 15px;
+    border-radius: 3px;
+    margin: 20px 0;
+}
+
+.lsp-notice.error {
+    background: #fce4e4;
+    border: 1px solid #dc3232;
+    color: #dc3232;
+}
+
+.lsp-notice.success {
+    background: #e7f5ea;
+    border: 1px solid #46b450;
+    color: #46b450;
+}
+
+.lsp-form-container {
+    max-width: 800px;
+    margin: 20px auto;
+    padding: 20px;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.lsp-form-container h2 {
+    margin-top: 0;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #0073aa;
+}
+
+.lsp-info-box {
+    background: #f0f6fc;
+    border: 1px solid #0073aa;
+    border-radius: 3px;
+    padding: 15px;
+    margin: 20px 0;
+}
+
+.lsp-info-box h3 {
+    margin: 0 0 10px;
+    color: #0073aa;
+}
+
+.lsp-info-box p {
+    margin: 5px 0;
+}
+
+.lsp-form-section {
+    margin: 30px 0;
+    padding: 20px;
+    background: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+}
+
+.lsp-form-section h3 {
+    margin-top: 0;
+    color: #0073aa;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #ddd;
+}
+
+.lsp-form-section h4 {
+    margin: 15px 0 10px;
+    color: #333;
+}
+
+.lsp-form-group {
+    margin-bottom: 15px;
+}
+
+.lsp-form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 600;
+    color: #333;
+}
+
+.lsp-form-group input[type="text"],
+.lsp-form-group input[type="email"],
+.lsp-form-group input[type="date"],
+.lsp-form-group input[type="number"],
+.lsp-form-group select,
+.lsp-form-group textarea {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+    font-size: 14px;
+}
+
+.lsp-form-group input:focus,
+.lsp-form-group select:focus,
+.lsp-form-group textarea:focus {
+    border-color: #0073aa;
+    outline: none;
+}
+
+.lsp-form-row {
+    display: flex;
+    gap: 15px;
+}
+
+.lsp-form-row .lsp-form-group {
+    flex: 1;
+}
+
+.lsp-checkbox-group {
+    margin: 10px 0;
+}
+
+.lsp-checkbox-group label {
+    display: block;
+    margin: 8px 0;
+    font-weight: normal;
+    cursor: pointer;
+}
+
+.lsp-checkbox-group input[type="checkbox"] {
+    margin-right: 8px;
+}
+
+.lsp-unit-box {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+    padding: 15px;
+    margin: 15px 0;
+}
+
+.lsp-unit-box h4 {
+    margin: 0 0 15px;
+    color: #0073aa;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #eee;
+}
+
+.lsp-elemen-row {
+    display: flex;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.lsp-elemen-row:last-child {
+    border-bottom: none;
+}
+
+.lsp-elemen-nama {
+    flex: 2;
+    font-weight: 500;
+}
+
+.lsp-elemen-options {
+    flex: 1;
+    display: flex;
+    gap: 15px;
+}
+
+.lsp-elemen-options label {
+    font-weight: normal;
+    cursor: pointer;
+}
+
+.lsp-elemen-options input[type="radio"] {
+    margin-right: 5px;
+}
+
+.lsp-form-submit {
+    margin-top: 30px;
+    text-align: center;
+}
+
+.lsp-form-submit .lsp-button {
+    padding: 12px 30px;
+    font-size: 16px;
+}
+
+.lsp-message {
+    padding: 15px;
+    border-radius: 3px;
+    margin: 20px 0;
+}
+
+.lsp-message.success {
+    background: #e7f5ea;
+    border: 1px solid #46b450;
+    color: #46b450;
+}
+
+.lsp-message.error {
+    background: #fce4e4;
+    border: 1px solid #dc3232;
+    color: #dc3232;
+}

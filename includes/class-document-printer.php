@@ -1,0 +1,480 @@
+<?php
+/**
+ * Document Printer Manager
+ *
+ * @package LSP_Certification_Management
+ */
+
+if ( ! defined( 'ABSPATH' ) ) {
+    exit;
+}
+
+class LSP_Cert_Document_Printer {
+
+    /**
+     * Daftarkan dokumen yang tersedia untuk dicetak
+     * Modular & Extensible: Jika ada form baru di masa depan (MAPA, AK, dll),
+     * cukup didaftarkan ke registry ini atau via filter lsp_cert_available_documents.
+     *
+     * @return array
+     */
+    public static function get_available_documents() {
+        $docs = array(
+            'bundle_all' => array(
+                'id'          => 'bundle_all',
+                'title'       => '📦 Seluruh Berkas Sertifikasi Asesi (1 s/d 25 All-in-One)',
+                'code'        => 'BNSP 1-25 BUNDLE',
+                'description' => 'Mencetak seluruh berkas sertifikasi kompetensi peserta (APL 01-02, MAPA 01-02, AK 01-04, IA 01-05, AK 02-03)',
+            ),
+            'all' => array(
+                'id'          => 'all',
+                'title'       => '📄 Semua Dokumen (Paket Lengkap APL 01 & 02)',
+                'code'        => 'FR.APL.01 & 02',
+                'description' => 'Paket lengkap Permohonan Sertifikasi & Asesmen Mandiri',
+            ),
+            'apl01' => array(
+                'id'          => 'apl01',
+                'title'       => 'FR.APL.01 Permohonan Sertifikasi',
+                'code'        => 'FR.APL.01',
+                'description' => 'Formulir Permohonan Sertifikasi Kompetensi',
+                'template'    => LSP_CERT_PLUGIN_DIR . 'templates/docs/form-apl01.php',
+            ),
+            'apl02' => array(
+                'id'          => 'apl02',
+                'title'       => 'FR.APL.02 Asesmen Mandiri',
+                'code'        => 'FR.APL.02',
+                'description' => 'Formulir Asesmen Mandiri & Portofolio',
+                'template'    => LSP_CERT_PLUGIN_DIR . 'templates/docs/form-apl02.php',
+            ),
+            'mapa01_obs' => array(
+                'id'          => 'mapa01_obs',
+                'title'       => 'FR.MAPA.01 Observasi Langsung',
+                'code'        => 'FR.MAPA.01 (Observasi)',
+                'description' => 'Merencanakan Aktivitas dan Proses Asesmen - Metode Observasi Langsung',
+                'template'    => LSP_CERT_PLUGIN_DIR . 'templates/docs/form-mapa01.php',
+                'metode'      => 'observasi',
+            ),
+            'mapa01_dit' => array(
+                'id'          => 'mapa01_dit',
+                'title'       => 'FR.MAPA.01 Daftar Instruksi Terstruktur (DIT)',
+                'code'        => 'FR.MAPA.01 (DIT)',
+                'description' => 'Merencanakan Aktivitas dan Proses Asesmen - Metode DIT',
+                'template'    => LSP_CERT_PLUGIN_DIR . 'templates/docs/form-mapa01.php',
+                'metode'      => 'dit',
+            ),
+            'mapa01_vp' => array(
+                'id'          => 'mapa01_vp',
+                'title'       => 'FR.MAPA.01 Verifikasi Portofolio',
+                'code'        => 'FR.MAPA.01 (Portofolio)',
+                'description' => 'Merencanakan Aktivitas dan Proses Asesmen - Metode Verifikasi Portofolio',
+                'template'    => LSP_CERT_PLUGIN_DIR . 'templates/docs/form-mapa01.php',
+                'metode'      => 'portofolio',
+            ),
+            'mapa01_all' => array(
+                'id'          => 'mapa01_all',
+                'title'       => '📑 FR.MAPA.01 Semua Versi (Observasi, DIT, Portofolio)',
+                'code'        => 'FR.MAPA.01 (Semua)',
+                'description' => 'Paket ketiga versi FR.MAPA.01 sekaligus dalam lembar terpisah',
+            ),
+            'mapa02' => array(
+                'id'          => 'mapa02',
+                'title'       => 'FR.MAPA.02 — Peta Instrumen Asesmen',
+                'code'        => 'FR.MAPA.02',
+                'description' => 'Peta Instrumen Asesmen Hasil Pendekatan Asesmen dan Perencanaan Asesmen',
+                'template'    => LSP_CERT_PLUGIN_DIR . 'templates/docs/form-mapa02.php',
+            ),
+            'ak01' => array(
+                'id'          => 'ak01',
+                'title'       => 'FR.AK.01 — Persetujuan Asesmen dan Kerahasiaan',
+                'code'        => 'FR.AK.01',
+                'description' => 'Persetujuan Asesmen dan Kerahasiaan antara Asesi dan Asesor',
+                'template'    => LSP_CERT_PLUGIN_DIR . 'templates/docs/form-ak01.php',
+            ),
+            'ak02' => array(
+                'id'          => 'ak02',
+                'title'       => 'FR.AK.02 — Rekaman Asesmen Kompetensi',
+                'code'        => 'FR.AK.02',
+                'description' => 'Rekaman Asesmen Kompetensi dan Bukti Asesmen per Peserta',
+                'template'    => LSP_CERT_PLUGIN_DIR . 'templates/docs/form-ak02.php',
+            ),
+            'ak03' => array(
+                'id'          => 'ak03',
+                'title'       => 'FR.AK.03 — Umpan Balik dan Catatan Asesmen',
+                'code'        => 'FR.AK.03',
+                'description' => 'Umpan Balik dari Asesi dan Catatan Pelaksanaan Asesmen',
+                'template'    => LSP_CERT_PLUGIN_DIR . 'templates/docs/form-ak03.php',
+            ),
+            'ak04' => array(
+                'id'          => 'ak04',
+                'title'       => 'FR.AK.04 — Banding Asesmen',
+                'code'        => 'FR.AK.04',
+                'description' => 'Formulir Pengajuan Banding Asesmen oleh Asesi',
+                'template'    => LSP_CERT_PLUGIN_DIR . 'templates/docs/form-ak04.php',
+            ),
+            'ak07' => array(
+                'id'          => 'ak07',
+                'title'       => 'FR.AK.07 — Ceklis Penyesuaian yang Wajar dan Beralasan',
+                'code'        => 'FR.AK.07',
+                'description' => 'Ceklis Penyesuaian yang Wajar dan Beralasan untuk Asesi dengan Kebutuhan Khusus / Kondisi Tertentu',
+                'template'    => LSP_CERT_PLUGIN_DIR . 'templates/docs/form-ak07.php',
+            ),
+            'ak05' => array(
+                'id'          => 'ak05',
+                'title'       => 'FR.AK.05 — Laporan Asesmen',
+                'code'        => 'FR.AK.05',
+                'description' => 'Laporan Hasil Asesmen Peserta dan Rekomendasi Asesor',
+                'template'    => LSP_CERT_PLUGIN_DIR . 'templates/docs/form-ak05.php',
+            ),
+            'ak06' => array(
+                'id'          => 'ak06',
+                'title'       => 'FR.AK.06 — Meninjau Proses Asesmen',
+                'code'        => 'FR.AK.06',
+                'description' => 'Formulir Peninjauan Proses Asesmen dan Dimensi Kompetensi',
+                'template'    => LSP_CERT_PLUGIN_DIR . 'templates/docs/form-ak06.php',
+            ),
+            'ia04a' => array(
+                'id'          => 'ia04a',
+                'title'       => 'FR.IA.04A — DIT Proyek Singkat / Kegiatan Terstruktur',
+                'code'        => 'FR.IA.04A',
+                'description' => 'Penjelasan Proyek Singkat atau Kegiatan Terstruktur Lainnya (STAR)',
+                'template'    => LSP_CERT_PLUGIN_DIR . 'templates/docs/form-ia04a.php',
+            ),
+            'ia04b' => array(
+                'id'          => 'ia04b',
+                'title'       => 'FR.IA.04B — Penilaian Proyek Singkat / Kegiatan Terstruktur',
+                'code'        => 'FR.IA.04B',
+                'description' => 'Lembar Penilaian Proyek Singkat atau Kegiatan Terstruktur Lainnya',
+                'template'    => LSP_CERT_PLUGIN_DIR . 'templates/docs/form-ia04b.php',
+            ),
+            'ia05a' => array(
+                'id'          => 'ia05a',
+                'title'       => 'FR.IA.05A — Pertanyaan Tertulis Pilihan Ganda',
+                'code'        => 'FR.IA.05A',
+                'description' => 'Naskah Pertanyaan Tertulis Pilihan Ganda (DPT)',
+                'template'    => LSP_CERT_PLUGIN_DIR . 'templates/docs/form-ia05a.php',
+            ),
+            'ia05b' => array(
+                'id'          => 'ia05b',
+                'title'       => 'FR.IA.05B — Lembar Kunci Jawaban Pilihan Ganda',
+                'code'        => 'FR.IA.05B',
+                'description' => 'Lembar Kunci Jawaban Pertanyaan Tertulis Pilihan Ganda (Terbatas)',
+                'template'    => LSP_CERT_PLUGIN_DIR . 'templates/docs/form-ia05b.php',
+            ),
+            'ia05c' => array(
+                'id'          => 'ia05c',
+                'title'       => 'FR.IA.05C — Lembar Jawaban Pilihan Ganda',
+                'code'        => 'FR.IA.05C',
+                'description' => 'Lembar Jawaban Pilihan Ganda dan Hasil Penilaian Asesi',
+                'template'    => LSP_CERT_PLUGIN_DIR . 'templates/docs/form-ia05c.php',
+            ),
+            'ia01' => array(
+                'id'          => 'ia01',
+                'title'       => 'FR.IA.01 — Ceklis Observasi Aktivitas Praktik',
+                'code'        => 'FR.IA.01',
+                'description' => 'Ceklis Observasi Aktivitas di Tempat Kerja atau Tempat Kerja Simulasi',
+                'template'    => LSP_CERT_PLUGIN_DIR . 'templates/docs/form-ia01.php',
+            ),
+            'ia02' => array(
+                'id'          => 'ia02',
+                'title'       => 'FR.IA.02 — Tugas Praktik Demonstrasi',
+                'code'        => 'FR.IA.02',
+                'description' => 'Tugas Praktik Demonstrasi (TPD) berbasis Kelompok Pekerjaan',
+                'template'    => LSP_CERT_PLUGIN_DIR . 'templates/docs/form-ia02.php',
+            ),
+            'ia03' => array(
+                'id'          => 'ia03',
+                'title'       => 'FR.IA.03 — Pertanyaan Mendukung Observasi',
+                'code'        => 'FR.IA.03',
+                'description' => 'Pertanyaan untuk Mendukung Observasi (PMO) Asesi',
+                'template'    => LSP_CERT_PLUGIN_DIR . 'templates/docs/form-ia03.php',
+            ),
+        );
+
+        return apply_filters( 'lsp_cert_available_documents', $docs );
+    }
+
+    /**
+     * Render halaman cetak siap print
+     *
+     * @param int    $pendaftaran_id
+     * @param string $doc_type
+     */
+    public static function render_print_page( $pendaftaran_id, $doc_type = 'all' ) {
+        // Cek otorisasi
+        if ( ! current_user_can( 'manage_options' ) && ! current_user_can( 'asesor' ) ) {
+            wp_die( 'Anda tidak memiliki hak akses untuk mencetak dokumen ini.', 'Akses Ditolak', array( 'response' => 403 ) );
+        }
+
+        // Keamanan Khusus FR.IA.05B: Lembar Kunci Jawaban terbatas hanya untuk Admin dan Asesor resmi
+        if ( 'ia05b' === $doc_type ) {
+            if ( ! current_user_can( 'manage_options' ) && ! current_user_can( 'asesor' ) && ! LSP_Cert_Integration::is_asesor( get_current_user_id() ) ) {
+                wp_die( 'Akses ditolak: FR.IA.05B (Lembar Kunci Jawaban) merupakan dokumen rahasia dan hanya dapat diakses oleh Admin atau Asesor.', 'Akses Ditolak', array( 'response' => 403 ) );
+            }
+        }
+
+        $pendaftaran = LSP_Cert_Database::get_pendaftaran( $pendaftaran_id );
+        if ( ! $pendaftaran ) {
+            wp_die( 'Data pendaftaran tidak ditemukan.', 'Data Tidak Ditemukan', array( 'response' => 404 ) );
+        }
+
+        // Isolasi data peserta: jika asesor non-admin mengakses, pastikan sesuai penugasan
+        if ( ! current_user_can( 'manage_options' ) && current_user_can( 'asesor' ) ) {
+            $current_user_id = get_current_user_id();
+            if ( ! empty( $pendaftaran->asesor_id ) && (int) $pendaftaran->asesor_id !== $current_user_id ) {
+                wp_die( 'Anda tidak memiliki hak akses untuk mencetak dokumen peserta ini.', 'Akses Ditolak', array( 'response' => 403 ) );
+            }
+        }
+
+        $kegiatan = LSP_Cert_Database::get_kegiatan( $pendaftaran->kegiatan_id );
+        if ( ! $kegiatan ) {
+            wp_die( 'Data kegiatan tidak ditemukan.', 'Data Tidak Ditemukan', array( 'response' => 404 ) );
+        }
+
+        // Ambil Paket MUK (Multi-Versi Bundling) jika ada, fallback ke default skema
+        $paket_muk_id = ! empty( $pendaftaran->paket_muk_id ) 
+            ? (int) $pendaftaran->paket_muk_id 
+            : ( ! empty( $kegiatan->paket_muk_id ) ? (int) $kegiatan->paket_muk_id : 0 );
+        $paket_muk    = null;
+        if ( class_exists( 'LSP_Cert_Paket_MUK' ) ) {
+            if ( $paket_muk_id ) {
+                $paket_muk = LSP_Cert_Paket_MUK::get_paket( $paket_muk_id );
+            } else {
+                $paket_muk = LSP_Cert_Paket_MUK::get_default_paket( $kegiatan->skema_id );
+                if ( $paket_muk ) {
+                    $paket_muk_id = (int) $paket_muk->id;
+                }
+            }
+        }
+        $nama_paket_muk = $paket_muk ? $paket_muk->nama_paket : '';
+        $kode_versi_muk = $paket_muk ? $paket_muk->kode_versi : '';
+
+        // Validasi Cakupan Kelompok Pekerjaan sebelum cetak FR.IA.01, FR.IA.02, FR.IA.03 (Task 3 Phase IA-01-03C)
+        self::enforce_kelompok_pekerjaan_coverage( $kegiatan->skema_id, $doc_type, $paket_muk_id );
+
+        $skema         = LSP_Cert_Integration::get_skema( $kegiatan->skema_id );
+        $tuk           = LSP_Cert_Integration::get_tuk( $kegiatan->tuk_id );
+        $asesor        = ! empty( $pendaftaran->asesor_id ) ? LSP_Cert_Integration::get_asesor( $pendaftaran->asesor_id ) : null;
+        $units_skkni   = LSP_Cert_Integration::get_unit_kompetensi( $kegiatan->skema_id );
+        $apl02_jawaban = LSP_Cert_Database::get_apl02_jawaban( $pendaftaran_id );
+        $available_docs = self::get_available_documents();
+
+        // Validasi doc_type
+        if ( ! array_key_exists( $doc_type, $available_docs ) ) {
+            $doc_type = 'all';
+        }
+
+        // Ambil opsi kategori latar belakang asesi untuk pencetakan saat ini (default 0 / belum dipilih)
+        $selected_kat     = isset( $_GET['kat'] ) ? intval( $_GET['kat'] ) : 0;
+        $selected_kat_obs = isset( $_GET['kat_obs'] ) ? intval( $_GET['kat_obs'] ) : $selected_kat;
+        $selected_kat_dit = isset( $_GET['kat_dit'] ) ? intval( $_GET['kat_dit'] ) : $selected_kat;
+        $selected_kat_vp  = isset( $_GET['kat_vp'] ) ? intval( $_GET['kat_vp'] ) : $selected_kat;
+
+        // Siapkan data Tim Asesor: Penyusun dan Validator (memiliki Nama dan Nomor MET)
+        // Data ini dipakai di FR.MAPA.01 dan formulir sertifikasi lainnya
+        $penyusun_nama = ! empty( $pendaftaran->penyusun_nama ) 
+            ? $pendaftaran->penyusun_nama 
+            : ( ! empty( $kegiatan->penyusun_nama ) ? $kegiatan->penyusun_nama : ( $asesor['name'] ?? 'Masriah' ) );
+        
+        $penyusun_met = ! empty( $pendaftaran->penyusun_met )
+            ? $pendaftaran->penyusun_met
+            : ( ! empty( $kegiatan->penyusun_met ) ? $kegiatan->penyusun_met : ( $asesor['no_reg'] ?? 'MET.000.032423 2019' ) );
+
+        $validator_nama = ! empty( $pendaftaran->validator_nama )
+            ? $pendaftaran->validator_nama
+            : ( ! empty( $kegiatan->validator_nama ) ? $kegiatan->validator_nama : 'Eko Prasyanto' );
+
+        $validator_met = ! empty( $pendaftaran->validator_met )
+            ? $pendaftaran->validator_met
+            : ( ! empty( $kegiatan->validator_met ) ? $kegiatan->validator_met : 'MET.000.014249 2019' );
+
+        $penyusun = array(
+            'id'     => $pendaftaran->asesor_id ?: ($kegiatan->penyusun_id ?? 0),
+            'name'   => $penyusun_nama,
+            'no_reg' => $penyusun_met,
+        );
+
+        $validator = array(
+            'id'     => $pendaftaran->validator_id ?: ($kegiatan->validator_id ?? 0),
+            'name'   => $validator_nama,
+            'no_reg' => $validator_met,
+        );
+
+        // Master Document Layout
+        include LSP_CERT_PLUGIN_DIR . 'templates/docs/document-layout.php';
+
+        if ( ! defined( 'LSP_CERT_TESTING' ) ) {
+            exit;
+        }
+    }
+
+    /**
+     * Render halaman cetak dokumen tingkat kegiatan (seperti FR.MAPA.02)
+     * Tidak memerlukan ID pendaftaran atau ID peserta
+     *
+     * @param int    $kegiatan_id
+     * @param string $doc_type
+     */
+    public static function render_kegiatan_print_page( $kegiatan_id, $doc_type = 'mapa02' ) {
+        // Cek otorisasi
+        if ( ! current_user_can( 'manage_options' ) && ! current_user_can( 'asesor' ) ) {
+            wp_die( 'Anda tidak memiliki hak akses untuk mencetak dokumen ini.', 'Akses Ditolak', array( 'response' => 403 ) );
+        }
+
+        // Keamanan Khusus FR.IA.05B: Lembar Kunci Jawaban terbatas hanya untuk Admin dan Asesor resmi
+        if ( 'ia05b' === $doc_type ) {
+            if ( ! current_user_can( 'manage_options' ) && ! current_user_can( 'asesor' ) && ! LSP_Cert_Integration::is_asesor( get_current_user_id() ) ) {
+                wp_die( 'Akses ditolak: FR.IA.05B (Lembar Kunci Jawaban) merupakan dokumen rahasia dan hanya dapat diakses oleh Admin atau Asesor.', 'Akses Ditolak', array( 'response' => 403 ) );
+            }
+        }
+
+        $kegiatan = LSP_Cert_Database::get_kegiatan( $kegiatan_id );
+        if ( ! $kegiatan ) {
+            wp_die( 'Data kegiatan sertifikasi tidak ditemukan.', 'Data Tidak Ditemukan', array( 'response' => 404 ) );
+        }
+
+        $skema = LSP_Cert_Integration::get_skema( $kegiatan->skema_id );
+        if ( ! $skema ) {
+            wp_die( 'Data Master Skema tidak ditemukan atau belum lengkap untuk kegiatan sertifikasi ini.', 'Master Skema Tidak Ditemukan', array( 'response' => 404 ) );
+        }
+
+        // Ambil Paket MUK (Multi-Versi Bundling) jika ada, fallback ke default skema
+        $paket_muk_id = ! empty( $pendaftaran->paket_muk_id ) 
+            ? (int) $pendaftaran->paket_muk_id 
+            : ( ! empty( $kegiatan->paket_muk_id ) ? (int) $kegiatan->paket_muk_id : 0 );
+        $paket_muk    = null;
+        if ( class_exists( 'LSP_Cert_Paket_MUK' ) ) {
+            if ( $paket_muk_id ) {
+                $paket_muk = LSP_Cert_Paket_MUK::get_paket( $paket_muk_id );
+            } else {
+                $paket_muk = LSP_Cert_Paket_MUK::get_default_paket( $kegiatan->skema_id );
+                if ( $paket_muk ) {
+                    $paket_muk_id = (int) $paket_muk->id;
+                }
+            }
+        }
+        $nama_paket_muk = $paket_muk ? $paket_muk->nama_paket : '';
+        $kode_versi_muk = $paket_muk ? $paket_muk->kode_versi : '';
+
+        // Validasi Cakupan Kelompok Pekerjaan sebelum cetak FR.IA.01, FR.IA.02, FR.IA.03 (Task 3 Phase IA-01-03C)
+        self::enforce_kelompok_pekerjaan_coverage( $kegiatan->skema_id, $doc_type, $paket_muk_id );
+
+        $tuk            = LSP_Cert_Integration::get_tuk( $kegiatan->tuk_id );
+        $units_skkni    = LSP_Cert_Integration::get_unit_kompetensi( $kegiatan->skema_id );
+        $available_docs = self::get_available_documents();
+        $pendaftaran    = null;
+        $apl02_jawaban  = array();
+
+        // Validasi doc_type
+        if ( ! array_key_exists( $doc_type, $available_docs ) ) {
+            $doc_type = 'mapa02';
+        }
+
+        $selected_kat     = 0;
+        $selected_kat_obs = 0;
+        $selected_kat_dit = 0;
+        $selected_kat_vp  = 0;
+
+        // Ambil data Penyusun & Validator dari tingkat kegiatan
+        $penyusun_nama = ! empty( $kegiatan->penyusun_nama ) 
+            ? $kegiatan->penyusun_nama 
+            : ( ! empty( $kegiatan->penyusun_id ) && ( $asesor_p = LSP_Cert_Integration::get_asesor( $kegiatan->penyusun_id ) ) ? $asesor_p['name'] : 'Masriah' );
+
+        $penyusun_met = ! empty( $kegiatan->penyusun_met ) 
+            ? $kegiatan->penyusun_met 
+            : ( ! empty( $kegiatan->penyusun_id ) && ( $asesor_p = LSP_Cert_Integration::get_asesor( $kegiatan->penyusun_id ) ) ? $asesor_p['no_reg'] : 'MET.000.032423 2019' );
+
+        $validator_nama = ! empty( $kegiatan->validator_nama ) 
+            ? $kegiatan->validator_nama 
+            : ( ! empty( $kegiatan->validator_id ) && ( $asesor_v = LSP_Cert_Integration::get_asesor( $kegiatan->validator_id ) ) ? $asesor_v['name'] : 'Eko Prasyanto' );
+
+        $validator_met = ! empty( $kegiatan->validator_met ) 
+            ? $kegiatan->validator_met 
+            : ( ! empty( $kegiatan->validator_id ) && ( $asesor_v = LSP_Cert_Integration::get_asesor( $kegiatan->validator_id ) ) ? $asesor_v['no_reg'] : 'MET.000.014249 2019' );
+
+        $penyusun = array(
+            'id'     => $kegiatan->penyusun_id ?? 0,
+            'name'   => $penyusun_nama,
+            'no_reg' => $penyusun_met,
+        );
+
+        $validator = array(
+            'id'     => $kegiatan->validator_id ?? 0,
+            'name'   => $validator_nama,
+            'no_reg' => $validator_met,
+        );
+
+        $asesor = array(
+            'id'     => $kegiatan->penyusun_id ?? 0,
+            'name'   => $penyusun_nama,
+            'no_reg' => $penyusun_met,
+        );
+
+        // Master Document Layout
+        include LSP_CERT_PLUGIN_DIR . 'templates/docs/document-layout.php';
+
+        if ( ! defined( 'LSP_CERT_TESTING' ) ) {
+            exit;
+        }
+    }
+
+    /**
+     * Validasi cakupan kelompok pekerjaan sebelum mencetak FR.IA.01, FR.IA.02, atau FR.IA.03
+     * Menghentikan pencetakan final di sisi server jika cakupan belum 100%
+     *
+     * @param int    $skema_id
+     * @param string $doc_type
+     * @param int    $paket_muk_id
+     */
+    public static function enforce_kelompok_pekerjaan_coverage( $skema_id, $doc_type, $paket_muk_id = 0 ) {
+        if ( ! in_array( $doc_type, array( 'ia01', 'ia02', 'ia03', 'bundle_all' ), true ) ) {
+            return;
+        }
+
+        $coverage = LSP_Cert_Kelompok_Pekerjaan::validate_coverage( $skema_id, $paket_muk_id );
+        if ( ! $coverage['is_complete'] ) {
+            $unassigned_items = '';
+            if ( ! empty( $coverage['unassigned_units'] ) ) {
+                foreach ( $coverage['unassigned_units'] as $u ) {
+                    $unassigned_items .= '<li><strong style="font-family: monospace;">' . esc_html( $u['kode'] ) . '</strong> &mdash; ' . esc_html( $u['judul'] ) . '</li>';
+                }
+            }
+
+            $admin_action = '';
+            if ( current_user_can( 'manage_options' ) ) {
+                $settings_url = admin_url( 'admin.php?page=lsp-kelompok-pekerjaan&skema_id=' . $skema_id . ( $paket_muk_id ? '&paket_muk_id=' . $paket_muk_id : '' ) );
+                $admin_action = '<p style="margin-top: 18px;">'
+                    . '<a href="' . esc_url( $settings_url ) . '" class="button button-primary" style="background:#0284c7; border-color:#0284c7; color:#fff; padding:6px 16px; text-decoration:none; border-radius:4px; font-weight:bold; display:inline-block;">'
+                    . '👉 Atur Kelompok Pekerjaan Sekarang'
+                    . '</a>'
+                    . '</p>';
+            }
+
+            $doc_labels = array(
+                'ia01' => 'FR.IA.01 (Ceklis Observasi Aktivitas Praktik)',
+                'ia02' => 'FR.IA.02 (Tugas Praktik Demonstrasi)',
+                'ia03' => 'FR.IA.03 (Pertanyaan Mendukung Observasi)',
+            );
+            $doc_label = $doc_labels[ $doc_type ] ?? strtoupper( $doc_type );
+
+            $message = '<div style="font-family: Arial, sans-serif; max-width: 650px; margin: 30px auto; padding: 24px; border: 2px solid #ef4444; border-radius: 8px; background: #fff5f5; color: #991b1b; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">'
+                . '<h2 style="margin-top: 0; color: #b91c1c; font-size: 18px; display: flex; align-items: center; gap: 8px;">🚫 Pencetakan Dokumen Ditolak: Cakupan Belum 100%</h2>'
+                . '<p style="font-size: 13.5px; line-height: 1.5; color: #374151;">'
+                . 'Sesuai regulasi BNSP, dokumen <strong>' . esc_html( $doc_label ) . '</strong> hanya dapat dicetak apabila seluruh unit kompetensi dalam Master Skema telah terkelompokkan ke dalam Kelompok Pekerjaan.'
+                . '</p>'
+                . '<p style="font-size: 13px; color: #4b5563;">'
+                . '<strong>Status Cakupan Saat Ini:</strong> <span style="color: #b91c1c; font-weight: bold;">' . esc_html( $coverage['coverage_percent'] ) . '%</span> (' . esc_html( $coverage['total_grouped_unique'] ) . ' dari ' . esc_html( $coverage['total_master'] ) . ' unit terkelompok).'
+                . '</p>'
+                . '<div style="background: #ffffff; border: 1px solid #fecaca; border-radius: 6px; padding: 12px 16px; margin: 15px 0;">'
+                . '<div style="font-size: 12.5px; font-weight: bold; color: #991b1b; margin-bottom: 6px;">Unit Kompetensi yang Belum Dikelompokkan (' . count( $coverage['unassigned_units'] ) . ' Unit):</div>'
+                . '<ul style="margin: 0; padding-left: 20px; font-size: 12.5px; line-height: 1.6; color: #374151;">' . $unassigned_items . '</ul>'
+                . '</div>'
+                . $admin_action
+                . '<p style="margin-top: 20px; font-size: 12px; color: #6b7280; border-top: 1px solid #fecaca; padding-top: 10px;">'
+                . 'Dokumen ditahan secara otomatis di sisi server untuk mencegah pencetakan dokumen yang kehilangan unit kompetensi.'
+                . '</p>'
+                . '</div>';
+
+            wp_die( $message, 'Pencetakan Ditolak — Cakupan Belum 100%', array( 'response' => 403 ) );
+        }
+    }
+}

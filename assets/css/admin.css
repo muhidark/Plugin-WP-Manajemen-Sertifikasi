@@ -1,0 +1,137 @@
+/* Admin Styles */
+
+.lsp-dashboard-stats {
+    display: flex;
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.stat-box {
+    flex: 1;
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    border-radius: 4px;
+    padding: 20px;
+    text-align: center;
+}
+
+.stat-box h3 {
+    font-size: 36px;
+    margin: 0 0 10px;
+    color: #23282d;
+}
+
+.stat-box p {
+    margin: 0;
+    color: #72777c;
+    font-size: 14px;
+}
+
+.stat-box.pending h3 {
+    color: #ffb900;
+}
+
+.stat-box.approved h3 {
+    color: #46b450;
+}
+
+.lsp-dashboard-actions {
+    margin: 30px 0;
+}
+
+.lsp-dashboard-actions h2 {
+    margin-bottom: 15px;
+}
+
+.lsp-dashboard-actions .button {
+    margin-right: 10px;
+}
+
+.lsp-dashboard-info {
+    margin: 30px 0;
+}
+
+.lsp-dashboard-info h2 {
+    margin-bottom: 15px;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 3px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.status-draft {
+    background: #f1f1f1;
+    color: #72777c;
+}
+
+.status-dibuka {
+    background: #e7f5ea;
+    color: #46b450;
+}
+
+.status-ditutup {
+    background: #fce4e4;
+    color: #dc3232;
+}
+
+.status-selesai {
+    background: #e5f0fa;
+    color: #0073aa;
+}
+
+.status-pending {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.status-lengkap {
+    background: #e7f5ea;
+    color: #46b450;
+}
+
+.status-tidak_lengkap {
+    background: #fce4e4;
+    color: #dc3232;
+}
+
+.status-disetujui {
+    background: #e7f5ea;
+    color: #46b450;
+}
+
+.status-ditolak {
+    background: #fce4e4;
+    color: #dc3232;
+}
+
+.lsp-detail-container {
+    margin-top: 20px;
+}
+
+.lsp-detail-box {
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    border-radius: 4px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.lsp-detail-box h2 {
+    margin-top: 0;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #eee;
+}
+
+.lsp-detail-box table {
+    margin-top: 15px;
+}
+
+.lsp-detail-box table th {
+    width: 200px;
+    font-weight: 600;
+}
