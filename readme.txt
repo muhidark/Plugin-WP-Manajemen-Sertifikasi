@@ -47,6 +47,8 @@ Plugin ini mengelola proses sertifikasi kompetensi dari pendaftaran hingga pence
 == Changelog ==
 
 = 1.1.2 =
+* Rilis produksi pertama: paket bersih tanpa berkas pengembangan (.git, tests, docs),
+  checksum SHA-256 disertakan; Core harus aktif lebih dulu
 * Perbaikan: nama asesor contoh pada tampilan admin Cetak Dokumen
   (FR.MAPA.01 & FR.MAPA.02) diganti netral — "Belum ditentukan" bila asesor belum ditetapkan
 * Perbaikan: dokumen tingkat kegiatan (FR.MAPA.02) mengambil Paket MUK dari kegiatan saja;
